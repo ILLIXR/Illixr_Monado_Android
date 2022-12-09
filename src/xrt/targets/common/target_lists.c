@@ -189,9 +189,9 @@ xrt_auto_prober_create_func_t target_auto_list[] = {
     oh_create_auto_prober,
 #endif
 
-#ifdef XRT_BUILD_DRIVER_ANDROID
-    android_create_auto_prober,
-#endif
+//#ifdef XRT_BUILD_DRIVER_ANDROID
+//    android_create_auto_prober,
+//#endif
 
 #ifdef XRT_BUILD_DRIVER_ILLIXR
     illixr_create_auto_prober,

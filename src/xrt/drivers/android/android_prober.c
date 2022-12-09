@@ -20,7 +20,9 @@
 #include "android_prober.h"
 #include "android_sensors.h"
 
+#include <android/log.h>
 
+#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "illixr-prober", __VA_ARGS__))
 
 /*
  *
@@ -69,6 +71,7 @@ android_prober_autoprobe(struct xrt_auto_prober *xap,
                          struct xrt_prober *xp,
                          struct xrt_device **out_xdevs)
 {
+    LOG("Autoprobing android driver..");
 	struct android_device *dd = android_device_create();
 	out_xdevs[0] = &dd->base;
 	return 1;
