@@ -17,5 +17,11 @@
                 <action android:name="${shutdownActionName}" />
             </intent-filter>
         </service>
+        <activity android:name=".IllixrImpl"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

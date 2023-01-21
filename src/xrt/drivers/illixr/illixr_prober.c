@@ -52,9 +52,9 @@ illixr_prober_autoprobe(struct xrt_auto_prober *xap,
 
 	const char *illixr_path, *illixr_comp;
 	//illixr_path = "sdcard/Download/obj/arm64-v8a/libruntime.so"; //getenv("ILLIXR_PATH");
-    illixr_path = "/home/madhuparna/obj/arm64-v8a/libruntime.so"; //getenv("ILLIXR_PATH");
+    illixr_path = "libruntime.so"; //getenv("ILLIXR_PATH");
 
-    illixr_comp = "/sdcard/Download/obj/arm64-v8a/libtimewarp_gl.so";//getenv("ILLIXR_COMP");
+    illixr_comp = "libpose_prediction.so:libcommon_lock.so:libtimewarp_gl.so";//getenv("ILLIXR_COMP");
 	if (!illixr_path ) {
         LOG("illixr paths not specified");
 		return 0;

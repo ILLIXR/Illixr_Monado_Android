@@ -3,6 +3,7 @@
 #include "error_util.hpp"
 #include "global_module_defs.hpp"
 
+#include <android/log.h>
 #include <algorithm>
 #include <dlfcn.h>
 #include <functional>
@@ -10,6 +11,9 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <android/native_window.h>
+
+#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "illixr-dynamic-lib", __VA_ARGS__))
 
 namespace ILLIXR {
 
@@ -59,9 +63,9 @@ public:
         char* error;
 
         // dlopen man page says that it can set errno sp
-        RAC_ERRNO_MSG("dynamic_lib before dlopen");
+        LOG("dynamic_lib before dlopen");
         void* handle = dlopen(path.data(), RTLD_LAZY | RTLD_LOCAL);
-        RAC_ERRNO_MSG("dynamic_lib after dlopen");
+        LOG("dynamic_lib after dlopen");
 
         if ((error = dlerror()) || !handle) {
             throw std::runtime_error{"dlopen(\"" + std::string{path} +

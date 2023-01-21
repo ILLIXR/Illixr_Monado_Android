@@ -43,7 +43,7 @@ namespace ILLIXR {
             LOGI("EGL Initialized with major version : %d minor version: %d", major_version, minor_version);
 
             const EGLint attribs[] = {
-                    //EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                    // EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
                     EGL_RENDERABLE_TYPE,EGL_OPENGL_ES2_BIT,
                     EGL_BLUE_SIZE, 8,
                     EGL_GREEN_SIZE, 8,
@@ -83,7 +83,7 @@ namespace ILLIXR {
                 return;
             }
             eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
-            if (window != nullptr) {
+            if (my_window != nullptr) {
                 LOGI("window is not nullptr");
             }
             else{

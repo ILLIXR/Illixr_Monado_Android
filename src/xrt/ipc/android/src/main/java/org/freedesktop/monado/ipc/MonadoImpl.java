@@ -10,6 +10,11 @@
 
 package org.freedesktop.monado.ipc;
 
+import static android.opengl.GLES10.glGenTextures;
+
+import android.content.Intent;
+import android.graphics.SurfaceTexture;
+import android.opengl.GLES10;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Surface;
@@ -50,7 +55,13 @@ public class MonadoImpl extends IMonado.Stub {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
                 Log.i(TAG, "surfaceCreated");
+                //Intent myIntent = new Intent(this, IllixrImpl.class);
                 passAppSurface(holder.getSurface());
+//                final int[] textures = new int[1];
+//                GLES10.glGenTextures(1, textures, 0);
+//                SurfaceTexture texture = new SurfaceTexture(9);
+//                Surface new_surf = new Surface(texture);
+//                nativeAppSurface_illixr(new_surf);
             }
 
             @Override
@@ -126,6 +137,9 @@ public class MonadoImpl extends IMonado.Stub {
      */
     @SuppressWarnings("JavaJniMissingFunction")
     private native void nativeAppSurface(@NonNull Surface surface);
+
+    @SuppressWarnings("JavaJniMissingFunction")
+    private native void nativeAppSurface_illixr(@NonNull Surface surface);
 
     /**
      * Native handling of receiving an FD for a new client: the FD should be used to start up the

@@ -21,6 +21,7 @@ static struct
 	jni::Object activity = {};
 	jni::Object context = {};
 	struct _ANativeWindow *window = nullptr;
+    struct _ANativeWindow *window_illixr = nullptr;
 } android_globals;
 
 void
@@ -57,10 +58,22 @@ android_globals_store_window(struct _ANativeWindow *window)
 	android_globals.window = window;
 }
 
+void
+android_globals_store_window_illixr(struct _ANativeWindow *window)
+{
+    android_globals.window_illixr = window;
+}
+
 struct _ANativeWindow *
 android_globals_get_window()
 {
 	return android_globals.window;
+}
+
+struct _ANativeWindow *
+android_globals_get_window_illixr()
+{
+    return android_globals.window_illixr;
 }
 
 struct _JavaVM *

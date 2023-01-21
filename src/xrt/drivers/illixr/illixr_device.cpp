@@ -30,6 +30,8 @@
 #include "illixr_component.h"
 #include "common/dynamic_lib.hpp"
 #include "common/runtime.hpp"
+#include "../auxiliary/android/android_globals.h"
+#include <android/native_window_jni.h>
 
 /*
  *
@@ -158,11 +160,21 @@ split(const std::string &s, char delimiter)
 static int
 illixr_rt_launch(struct illixr_hmd *dh, const char *path, const char *comp)
 {
+    //JavaVM* vm = (JavaVM*)android_globals_get_vm();
+    ANativeWindow* window = (ANativeWindow*) android_globals_get_window_illixr();
+    //ANativeWindow_acquire(window);
+//    JavaVM* jvm = (JavaVM*)android_globals_get_vm();
+//    JNIEnv* myNewEnv;
+//    jvm->AttachCurrentThread(reinterpret_cast<JNIEnv **>((void **) &myNewEnv), NULL);
+//    ANativeWindow* window = ANativeWindow_fromSurface(myNewEnv, ANativeWindow_toSurface(myNewEnv, window1));
+    if(window != NULL)
+        LOG("Anative window is not null");
 	dh->runtime_lib = new ILLIXR::dynamic_lib{ILLIXR::dynamic_lib::create(std::string{path})};
-	dh->runtime = dh->runtime_lib->get<ILLIXR::runtime *(*)()>("runtime_factory")();
-	dh->runtime->load_so(split(std::string{comp}, ':'));
+    LOG("Before getting runtime factory");
+	dh->runtime = dh->runtime_lib->get<ILLIXR::runtime *(*)(EGLContext appGLCtx, ANativeWindow *window)>("runtime_factory")(EGL_NO_CONTEXT, window);
+    LOG("After getting runtime factory");
+    dh->runtime->load_so(split(std::string{comp}, ':'));
 	dh->runtime->load_plugin_factory((ILLIXR::plugin_factory)illixr_monado_create_plugin);
-
 	return 0;
 }
 

@@ -72,8 +72,14 @@ android_globals_get_context();
 void
 android_globals_store_window(struct _ANativeWindow *window);
 
+void
+android_globals_store_window_illixr(struct _ANativeWindow *window);
+
 struct _ANativeWindow *
 android_globals_get_window();
+
+struct _ANativeWindow *
+android_globals_get_window_illixr();
 
 #ifdef __cplusplus
 }
