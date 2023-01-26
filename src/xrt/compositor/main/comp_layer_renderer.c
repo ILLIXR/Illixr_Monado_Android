@@ -462,13 +462,26 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->framebuffers[eye].memory);
     vk->vkBindImageMemory(vk->device, self->framebuffers[eye].image, self->framebuffers[eye].memory, 0);
 
-    int fd = 0;
+    #if defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_FD)
+        int fd = 0;
     VkMemoryGetFdInfoKHR memoryFdInfo = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, NULL,
-                                         self->framebuffers[eye].memory,
-                                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
+                                        self->framebuffers[eye].memory,
+                                        VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
     vk->vkGetMemoryFdKHR(vk->device, &memoryFdInfo, &fd);
 
     illixr_publish_vk_image_handle(fd, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
+
+    #elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
+        VkMemoryGetAndroidHardwareBufferInfoANDROID memoryFdInfo = {
+                .sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
+                .pNext = NULL,
+                .memory = self->framebuffers[eye].memory,
+        };
+
+        AHardwareBuffer *buf = NULL;
+        VkResult ret = vk->vkGetMemoryAndroidHardwareBufferANDROID(vk->device, &memoryFdInfo, &buf);
+        illixr_publish_vk_image_handle((int)buf, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
+    #endif
 
 	vk_create_sampler(vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, &self->framebuffers[eye].sampler);
 

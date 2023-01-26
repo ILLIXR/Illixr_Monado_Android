@@ -890,71 +890,71 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
 	struct comp_target *ct = c->target;
 
 	struct render_gfx_target_resources *rtr = &r->rtr_array[r->acquired_buffer];
-//	bool one_projection_layer_fast_path = c->base.slot.one_projection_layer_fast_path;
-//
-//	// No fast path, standard layer renderer path.
-//	if (!one_projection_layer_fast_path) {
-//		// We mark here to include the layer rendering in the GPU time.
-//		comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
-//
-//		renderer_get_view_projection(r);
-//		comp_layer_renderer_draw(r->lr);
-//
-//		VkSampler src_samplers[2] = {
-//		    r->lr->framebuffers[0].sampler,
-//		    r->lr->framebuffers[1].sampler,
-//
-//		};
-//		VkImageView src_image_views[2] = {
-//		    r->lr->framebuffers[0].view,
-//		    r->lr->framebuffers[1].view,
-//		};
-//
-//		struct xrt_normalized_rect src_norm_rects[2] = {
-//		    {.x = 0, .y = 0, .w = 1, .h = 1},
-//		    {.x = 0, .y = 0, .w = 1, .h = 1},
-//		};
-//
-//		renderer_build_rendering(r, rr, rtr, src_samplers, src_image_views, src_norm_rects);
-//
-//		renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-//
-//		return;
-//	}
-//
-//
-//	/*
-//	 * Fast path.
-//	 */
-//
-//	XRT_MAYBE_UNUSED const uint32_t layer_count = c->base.slot.layer_count;
-//	assert(layer_count >= 1);
-//
-//	int i = 0;
-//	const struct comp_layer *layer = &c->base.slot.layers[i];
-//
-//	switch (layer->data.type) {
-//	case XRT_LAYER_STEREO_PROJECTION: {
-//		const struct xrt_layer_stereo_projection_data *stereo = &layer->data.stereo;
-//		const struct xrt_layer_projection_view_data *lvd = &stereo->l;
-//		const struct xrt_layer_projection_view_data *rvd = &stereo->r;
-//
-//		do_gfx_mesh_and_proj(r, rr, rtr, layer, lvd, rvd);
-//
-//		renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-//
-//		// We mark afterwards to not include CPU time spent.
-//		comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
-//	} break;
-//
-//	case XRT_LAYER_STEREO_PROJECTION_DEPTH: {
-//		const struct xrt_layer_stereo_projection_depth_data *stereo = &layer->data.stereo_depth;
-//		const struct xrt_layer_projection_view_data *lvd = &stereo->l;
-//		const struct xrt_layer_projection_view_data *rvd = &stereo->r;
-//
-//		do_gfx_mesh_and_proj(r, rr, rtr, layer, lvd, rvd);
+	bool one_projection_layer_fast_path = c->base.slot.one_projection_layer_fast_path;
 
-//		renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+	// No fast path, standard layer renderer path.
+	if (!one_projection_layer_fast_path) {
+		// We mark here to include the layer rendering in the GPU time.
+		comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
+
+		renderer_get_view_projection(r);
+		comp_layer_renderer_draw(r->lr);
+
+		VkSampler src_samplers[2] = {
+		    r->lr->framebuffers[0].sampler,
+		    r->lr->framebuffers[1].sampler,
+
+		};
+		VkImageView src_image_views[2] = {
+		    r->lr->framebuffers[0].view,
+		    r->lr->framebuffers[1].view,
+		};
+
+		struct xrt_normalized_rect src_norm_rects[2] = {
+		    {.x = 0, .y = 0, .w = 1, .h = 1},
+		    {.x = 0, .y = 0, .w = 1, .h = 1},
+		};
+
+		renderer_build_rendering(r, rr, rtr, src_samplers, src_image_views, src_norm_rects);
+
+		renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+		return;
+	}
+
+
+	/*
+	 * Fast path.
+	 */
+
+	XRT_MAYBE_UNUSED const uint32_t layer_count = c->base.slot.layer_count;
+	assert(layer_count >= 1);
+
+	int i = 0;
+	const struct comp_layer *layer = &c->base.slot.layers[i];
+
+	switch (layer->data.type) {
+	case XRT_LAYER_STEREO_PROJECTION: {
+		const struct xrt_layer_stereo_projection_data *stereo = &layer->data.stereo;
+		const struct xrt_layer_projection_view_data *lvd = &stereo->l;
+		const struct xrt_layer_projection_view_data *rvd = &stereo->r;
+
+		do_gfx_mesh_and_proj(r, rr, rtr, layer, lvd, rvd);
+
+		renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+		// We mark afterwards to not include CPU time spent.
+		comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
+	} break;
+
+	case XRT_LAYER_STEREO_PROJECTION_DEPTH: {
+		const struct xrt_layer_stereo_projection_depth_data *stereo = &layer->data.stereo_depth;
+		const struct xrt_layer_projection_view_data *lvd = &stereo->l;
+		const struct xrt_layer_projection_view_data *rvd = &stereo->r;
+
+		do_gfx_mesh_and_proj(r, rr, rtr, layer, lvd, rvd);
+
+		renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
 		// We mark afterwards to not include CPU time spent.
 		comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
@@ -962,12 +962,13 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
         COMP_SPEW(c, "LAYER RENDERER DRAW STARTED");
         comp_layer_renderer_draw(r->lr); // arranges images for each eye
         COMP_SPEW(c, "LAYER RENDERER DRAW FINISHED");
-//	} break;
-        COMP_SPEW(c, "WRITE TO FRAME STARTED");
-        illixr_write_frame(0, 0);
-        COMP_SPEW(c, "WRITE TO FRAME FINISHED");
-//	default: assert(false);
-//	}
+	} break;
+
+	default: assert(false);
+	}
+    COMP_SPEW(c, "WRITE TO FRAME STARTED");
+    illixr_write_frame(0, 0);
+    COMP_SPEW(c, "WRITE TO FRAME FINISHED");
     return;
 }
 
