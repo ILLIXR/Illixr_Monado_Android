@@ -7,12 +7,15 @@ extern "C" {
 #include <iostream>
 #include <array>
 
+#include <android/log.h>
 #include "common/plugin.hpp"
 #include "common/phonebook.hpp"
 #include "common/switchboard.hpp"
 #include "common/data_format.hpp"
 #include "common/pose_prediction.hpp"
 #include "common/relative_clock.hpp"
+
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "comp-layer", __VA_ARGS__))
 
 using namespace ILLIXR;
 
@@ -93,6 +96,23 @@ extern "C" void illixr_publish_vk_image_handle(int fd, int64_t format, size_t si
     illixr_plugin_obj->sb_image_handle.put(illixr_plugin_obj->sb_image_handle.allocate<image_handle>(
             image_handle {
                     fd,
+                    format,
+                    size,
+                    width,
+                    height,
+                    num_images,
+                    swapchain_index
+            }
+    ));
+}
+
+extern "C" void illixr_publish_vk_buffer_handle(AHardwareBuffer *ahardware_buffer, int64_t format, size_t size, uint32_t width, uint32_t height, uint32_t num_images, uint32_t swapchain_index) {
+    LOGI("illixr vk publish handle .. ");
+    assert(illixr_plugin_obj != nullptr && "illixr_plugin_obj must be initialized first.");
+    LOGI("illixr vk publish handle .. ");
+    illixr_plugin_obj->sb_image_handle.put(illixr_plugin_obj->sb_image_handle.allocate<image_handle>(
+            image_handle {
+                    ahardware_buffer,
                     format,
                     size,
                     width,

@@ -571,8 +571,10 @@ public:
         try_register_topic<specific_event>(topic_name)
             .schedule(plugin_id, [=](ptr<const event>&& this_event, std::size_t it_no) {
                 assert(this_event);
-                ptr<const specific_event> this_specific_event =
-                    std::dynamic_pointer_cast<const specific_event>(std::move(this_event));
+                auto this_specific_event_auto = (reinterpret_cast<typename std::shared_ptr<const specific_event>::element_type*>(this_event.get()));
+                ptr<const specific_event> this_specific_event = std::shared_ptr<const specific_event>{this_event, this_specific_event_auto};
+//                ptr<const specific_event> this_specific_event =
+//                    std::dynamic_pointer_cast<const specific_event>(std::move(this_event));
                 assert(this_specific_event);
                 fn(std::move(this_specific_event), it_no);
             });

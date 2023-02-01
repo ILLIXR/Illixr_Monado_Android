@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <EGL/egl.h>
 #include <GLES/gl.h>
+#include <android/hardware_buffer.h>
 //#undef Complex // For 'Complex' conflict
 #include "phonebook.hpp"
 #include "relative_clock.hpp"
@@ -165,6 +166,21 @@ namespace ILLIXR {
                 , height{height_} { }
     } vk_image_handle;
 
+    typedef struct vk_buffer_handle {
+        AHardwareBuffer  *ahardware_buffer;
+        int64_t  format;
+        size_t   allocation_size;
+        uint32_t width;
+        uint32_t height;
+
+        vk_buffer_handle(AHardwareBuffer *ahardware_buffer_, int64_t format_, size_t alloc_size, uint32_t width_, uint32_t height_)
+                : ahardware_buffer{ahardware_buffer_}
+                , format{format_}
+                , allocation_size{alloc_size}
+                , width{width_}
+                , height{height_} { }
+    } vk_buffer_handle;
+
 // This is used to share swapchain images between ILLIXR and Monado.
 // When Monado uses its GL pipeline, it's enough to just share a context during creation.
 // Otherwise, file descriptors are needed to share the images.
@@ -174,6 +190,7 @@ namespace ILLIXR {
         union {
             GLuint          gl_handle;
             vk_image_handle vk_handle;
+            vk_buffer_handle vk_buffer_handle;
         };
 
         uint32_t num_images;
@@ -192,6 +209,13 @@ namespace ILLIXR {
                      uint32_t swapchain_index_)
                 : type{graphics_api::VULKAN}
                 , vk_handle{vk_fd_, format, alloc_size, width_, height_}
+                , num_images{num_images_}
+                , swapchain_index{swapchain_index_} { }
+
+        image_handle(AHardwareBuffer *ahardware_buffer, int64_t format, size_t alloc_size, uint32_t width_, uint32_t height_, uint32_t num_images_,
+                     uint32_t swapchain_index_)
+                : type{graphics_api::VULKAN}
+                , vk_buffer_handle{ahardware_buffer, format, alloc_size, width_, height_}
                 , num_images{num_images_}
                 , swapchain_index{swapchain_index_} { }
     };

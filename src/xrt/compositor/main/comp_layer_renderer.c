@@ -19,7 +19,6 @@
 #include "vk/vk_helpers.h"
 #include "../drivers/illixr/illixr_component.h"
 
-
 struct comp_layer_vertex
 {
     float position[3];
@@ -509,7 +508,7 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 
         AHardwareBuffer *buf = NULL;
         VkResult ret = vk->vkGetMemoryAndroidHardwareBufferANDROID(vk->device, &memoryFdInfo, &buf);
-        illixr_publish_vk_image_handle((int)buf, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
+        illixr_publish_vk_buffer_handle(buf, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
     #endif
     return true;
 }
