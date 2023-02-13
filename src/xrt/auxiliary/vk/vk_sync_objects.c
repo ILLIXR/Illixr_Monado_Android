@@ -30,6 +30,12 @@ vk_get_semaphore_handle_type(struct vk_bundle *vk)
 	if (vk->external.binary_semaphore_opaque_fd) {
 		return VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
 	}
+    else if(vk->external.binary_semaphore_sync_fd) {
+        return VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+    }
+    else {
+        return -1;
+    }
 
 #elif defined(XRT_GRAPHICS_SYNC_HANDLE_IS_WIN32_HANDLE)
 	if (vk->external.binary_semaphore_d3d12_fence) {
@@ -129,10 +135,12 @@ vk_create_and_submit_fence_native(struct vk_bundle *vk, xrt_graphics_sync_handle
 	};
 
 	ret = vk->vkCreateFence(vk->device, &create_info, NULL, &fence);
+    VK_ERROR(vk, "vkCreateFence: %s", vk_result_string(ret));
 	if (ret != VK_SUCCESS) {
 		VK_ERROR(vk, "vkCreateFence: %s", vk_result_string(ret));
 		return ret;
 	}
+
 
 
 	/*
@@ -148,7 +156,7 @@ vk_create_and_submit_fence_native(struct vk_bundle *vk, xrt_graphics_sync_handle
 	    fence);              // fence
 
 	os_mutex_unlock(&vk->queue_mutex);
-
+    VK_ERROR(vk, "vkQueueSubmit: %s", vk_result_string(ret));
 	if (ret != VK_SUCCESS) {
 		VK_ERROR(vk, "vkQueueSubmit: %s", vk_result_string(ret));
 		vk->vkDestroyFence(vk->device, fence, NULL);
@@ -168,6 +176,7 @@ vk_create_and_submit_fence_native(struct vk_bundle *vk, xrt_graphics_sync_handle
 	};
 
 	ret = vk->vkGetFenceFdKHR(vk->device, &get_fd_info, &native);
+    VK_ERROR(vk, "vkGetFenceFdKHR: %s", vk_result_string(ret));
 	if (ret != VK_SUCCESS) {
 		VK_ERROR(vk, "vkGetFenceFdKHR: %s", vk_result_string(ret));
 		vk->vkDestroyFence(vk->device, fence, NULL);
@@ -201,7 +210,7 @@ vk_create_and_submit_fence_native(struct vk_bundle *vk, xrt_graphics_sync_handle
 
 	//*out_fence = fence;
 	*out_native = native;
-
+    VK_ERROR(vk, "END: %s", vk_result_string(VK_SUCCESS));
 	return VK_SUCCESS;
 }
 
@@ -286,6 +295,10 @@ vk_create_semaphore_and_native(struct vk_bundle *vk, VkSemaphore *out_sem, xrt_g
 		VK_ERROR(vk, "No semaphore type supported for export/import.");
 		return VK_ERROR_FEATURE_NOT_PRESENT;
 	}
+    if (handle_type == -1) {
+        VK_ERROR(vk, "binary semaphore not supported");
+        return VK_ERROR_FEATURE_NOT_PRESENT;
+    }
 
 	return create_semaphore_and_native( //
 	    vk,                             // vk_bundle

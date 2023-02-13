@@ -32,6 +32,7 @@
 #include "common/runtime.hpp"
 #include "../auxiliary/android/android_globals.h"
 #include <android/native_window_jni.h>
+#define ILLIXR_MONADO 1
 
 /*
  *

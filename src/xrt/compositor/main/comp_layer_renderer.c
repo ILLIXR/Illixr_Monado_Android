@@ -14,10 +14,13 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.h>
 
 
 #include "vk/vk_helpers.h"
 #include "../drivers/illixr/illixr_component.h"
+#include "android/android_ahardwarebuffer_allocator.h"
 
 struct comp_layer_vertex
 {
@@ -25,15 +28,21 @@ struct comp_layer_vertex
     float uv[2];
 };
 
+//static const VkClearColorValue background_color_idle = {
+//        .float32 = {0.1f, 0.1f, 0.1f, 1.0f},
+//};
+
 static const VkClearColorValue background_color_idle = {
-        .float32 = {0.1f, 0.1f, 0.1f, 1.0f},
+        .float32 = {0.0f, 1.0f, 0.0f, 1.0f},
 };
+
+//static const VkClearColorValue background_color_active = {
+//        .float32 = {0.0f, 0.0f, 0.0f, 1.0f},
+//};
 
 static const VkClearColorValue background_color_active = {
-        .float32 = {0.0f, 0.0f, 0.0f, 1.0f},
+        .float32 = {0.0f, 1.0f, 0.0f, 1.0f},
 };
-
-
 
 static bool
 _init_render_pass(struct vk_bundle *vk,
@@ -408,6 +417,235 @@ _render_eye(struct comp_layer_renderer *self,
 }
 
 static bool
+_init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPass rp, uint32_t eye)
+{
+
+
+    struct vk_bundle *vk = self->vk;
+
+    VkImageUsageFlags usage =                 //
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | //
+            VK_IMAGE_USAGE_SAMPLED_BIT |          //
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT;      //
+
+    /*
+    VkResult res = vk_create_image_simple(vk, self->extent, format, usage, &self->framebuffers[eye].memory,
+                                          &self->framebuffers[eye].image);
+    vk_check_error("vk_create_image_simple", res, false);
+    */
+
+
+
+#if defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_FD)
+       /*
+    VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
+       external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+
+       VkImageCreateInfo imageCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+       imageCreateInfo.pNext         = &external_memory_image_create_info;
+       imageCreateInfo.imageType     = VK_IMAGE_TYPE_2D;
+       imageCreateInfo.format        = format;
+       imageCreateInfo.mipLevels     = 1;
+       imageCreateInfo.arrayLayers   = 1;
+       imageCreateInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
+       imageCreateInfo.extent.depth  = 1;
+       imageCreateInfo.extent.width  = self->extent.width;
+       imageCreateInfo.extent.height = self->extent.height;
+       imageCreateInfo.usage         = usage;
+       VkResult ret = vk->vkCreateImage(vk->device, &imageCreateInfo, NULL, &self->illixr_images[eye].image);
+        VK_ERROR(vk, " create image ..%s", vk_result_string(ret));
+
+       VkMemoryRequirements memReqs = {};
+       vk->vkGetImageMemoryRequirements(vk->device, self->illixr_images[eye].image, &memReqs);
+
+       VkExportMemoryAllocateInfo exportAllocInfo = {
+                       VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, NULL,
+                       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
+       VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo};
+
+       VkDeviceSize allocationSize = {0};
+       memAllocInfo.allocationSize = allocationSize = memReqs.size;
+    VK_ERROR(vk, " memory requirement size..%d", memAllocInfo.allocationSize);
+
+
+    uint32_t memoryTypeIndex = UINT32_MAX;
+//       bool bret = vk_get_memory_type(          //
+//                   vk,                                  // vk_bundle
+//                   memReqs.memoryTypeBits,  // type_bits
+//                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // memory_props
+//                   &memoryTypeIndex);                 // out_type_id
+//       if (!bret) {
+//               return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+//       }
+
+    for (uint32_t i = 0; i < vk->device_memory_props.memoryTypeCount; i++)
+    {
+        if ((memReqs.memoryTypeBits & (1 << i)) &&
+            (vk->device_memory_props.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) ==
+            (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+        {
+            memAllocInfo.memoryTypeIndex  = i;
+            break;
+        }
+    }
+
+       //memAllocInfo.memoryTypeIndex = memoryTypeIndex;
+     ret = vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->illixr_images[eye].memory);
+    VK_ERROR(vk, " vkAllocateMemory ..%s", vk_result_string(ret));
+
+    ret = vk->vkBindImageMemory(vk->device, self->illixr_images[eye].image, self->illixr_images[eye].memory, 0);
+    VK_ERROR(vk, " vkBindImageMemory ..%s", vk_result_string(ret));
+
+    int fd = 0;
+    VkMemoryGetFdInfoKHR memoryFdInfo = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, NULL,
+                                         self->illixr_images[eye].memory,
+                                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
+    ret = vk->vkGetMemoryFdKHR(vk->device, &memoryFdInfo, &fd);
+
+    if(ret != VK_SUCCESS)
+        VK_ERROR(vk, " vkGetMemoryFdKHR: ..%s", vk_result_string(ret));
+       // Note that we add 2 to the index here (because the first 2 values are for the swapchain)
+    illixr_publish_vk_image_handle(fd, format, allocationSize, self->extent.width, self->extent.height, 1, eye+2);
+*/
+    #elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
+    AHardwareBuffer_Desc desc;
+    U_ZERO(&desc);
+    desc.height = self->extent.height;
+    desc.width = self->extent.width;
+    desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;;
+    desc.layers = 1;
+    desc.usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER
+                 | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+
+    AHardwareBuffer *a_buffer = NULL;
+
+    int retu = AHardwareBuffer_allocate(&desc, &a_buffer);
+    if (retu != 0) {
+        return XRT_ERROR_ALLOCATION;
+    }
+    // Out->pNext
+    VkAndroidHardwareBufferFormatPropertiesANDROID a_buffer_format_props = {
+            .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID,
+    };
+
+    // Out
+    VkAndroidHardwareBufferPropertiesANDROID a_buffer_props = {
+            .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID,
+            .pNext = &a_buffer_format_props,
+    };
+
+    VkResult ret = vk->vkGetAndroidHardwareBufferPropertiesANDROID(vk->device, a_buffer, &a_buffer_props);
+    if (ret != VK_SUCCESS) {
+        U_LOG_E("vkGetAndroidHardwareBufferPropertiesANDROID: %s", vk_result_string(ret));
+        return ret;
+    }
+    void *next_chain = NULL;
+    VkExternalFormatANDROID format_android = {
+            .sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+    };
+    (format_android).pNext = next_chain;                                                                           \
+    next_chain = (void *)&(format_android);
+
+    VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
+    external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    external_memory_image_create_info.pNext = next_chain;
+
+    VkImageCreateInfo create_info = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .pNext = &external_memory_image_create_info,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = format,
+            .extent = {.width = self->extent.width, .height = self->extent.height, .depth = 1},
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = usage,
+//            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    ret = vk->vkCreateImage(vk->device, &create_info, NULL, &self->illixr_images[eye].image);
+    if (ret != VK_SUCCESS) {
+        U_LOG_E("vkCreateImage: %s", vk_result_string(ret));
+        return ret;
+    }
+
+    VkMemoryRequirements memReqs = {};
+    vk->vkGetImageMemoryRequirements(vk->device, self->illixr_images[eye].image, &memReqs);
+
+    VkImportAndroidHardwareBufferInfoANDROID androidHardwareBufferInfo = {
+            VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
+            NULL,
+            a_buffer
+    };
+
+    VkExportMemoryAllocateInfo exportAllocInfo = {
+            VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, &androidHardwareBufferInfo,
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
+    VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo};
+
+    VkDeviceSize allocationSize = {0};
+    memAllocInfo.allocationSize = allocationSize = a_buffer_props.allocationSize;//memReqs.size;
+
+    uint32_t memoryTypeIndex = UINT32_MAX;
+    bool bret = vk_get_memory_type(          //
+            vk,                                  // vk_bundle
+            memReqs.memoryTypeBits,  // type_bits
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            &memoryTypeIndex);                 // out_type_id
+    if (!bret) {
+        return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+    }
+    VK_ERROR(vk, " mmorytypeindex: and memorytypebits %d %d", memoryTypeIndex, memReqs.memoryTypeBits);
+
+    memAllocInfo.memoryTypeIndex = memoryTypeIndex;
+    ret = vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->illixr_images[eye].memory);
+    if (ret != VK_SUCCESS) {
+        VK_ERROR(vk, " vkAllocateMemory: %s", vk_result_string(ret));
+        return ret;
+    }
+    ret = vk->vkBindImageMemory(vk->device, self->illixr_images[eye].image, self->illixr_images[eye].memory, 0);
+    if (ret != VK_SUCCESS) {
+        // Clean up memory
+        vk->vkFreeMemory(vk->device, self->illixr_images[eye].memory, NULL);
+        VK_ERROR(vk, "vkBindImageMemory: %s", vk_result_string(ret));
+        return ret;
+    }
+        VkMemoryGetAndroidHardwareBufferInfoANDROID memoryFdInfo = {
+                .sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
+                .pNext = NULL,
+                .memory = self->illixr_images[eye].memory,
+        };
+
+        AHardwareBuffer *buf = NULL;
+        ret = vk->vkGetMemoryAndroidHardwareBufferANDROID(vk->device, &memoryFdInfo, &buf);
+        if(ret != VK_SUCCESS)
+            VK_ERROR(vk, " vkGetMemoryAndroidHardwareBufferANDROID: %s", vk_result_string(ret));
+        illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye+2);
+    #endif
+
+
+   vk_create_sampler(vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, &self->illixr_images[eye].sampler);
+
+   VkImageSubresourceRange subresource_range = {
+               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+               .baseMipLevel = 0,
+               .levelCount = 1,
+               .baseArrayLayer = 0,
+               .layerCount = 1,
+           };
+
+   VkResult res = vk_create_view(vk, self->illixr_images[eye].image, VK_IMAGE_VIEW_TYPE_2D, format, subresource_range,
+                                                              &self->illixr_images[eye].view);
+
+   vk_check_error("vk_create_view", res, false);
+
+   return true;
+}
+
+
+static bool
 _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPass rp, uint32_t eye)
 {
     struct vk_bundle *vk = self->vk;
@@ -417,38 +655,13 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
             VK_IMAGE_USAGE_SAMPLED_BIT |          //
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT;      //
 
+    /*
     VkResult res = vk_create_image_simple(vk, self->extent, format, usage, &self->framebuffers[eye].memory,
                                           &self->framebuffers[eye].image);
     vk_check_error("vk_create_image_simple", res, false);
+    */
 
-    vk_create_sampler(vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, &self->framebuffers[eye].sampler);
-
-    VkImageSubresourceRange subresource_range = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1,
-    };
-
-    res = vk_create_view(vk, self->framebuffers[eye].image, VK_IMAGE_VIEW_TYPE_2D, format, subresource_range,
-                         &self->framebuffers[eye].view);
-
-    vk_check_error("vk_create_view", res, false);
-
-    VkFramebufferCreateInfo framebuffer_info = {
-            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-            .renderPass = rp,
-            .attachmentCount = 1,
-            .pAttachments = (VkImageView[]){self->framebuffers[eye].view},
-            .width = self->extent.width,
-            .height = self->extent.height,
-            .layers = 1,
-    };
-
-    res = vk->vkCreateFramebuffer(vk->device, &framebuffer_info, NULL, &self->framebuffers[eye].handle);
-    vk_check_error("vkCreateFramebuffer", res, false);
-
+#if defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_FD)
 
     VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
     external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
@@ -490,26 +703,137 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->framebuffers[eye].memory);
     vk->vkBindImageMemory(vk->device, self->framebuffers[eye].image, self->framebuffers[eye].memory, 0);
 
-    #if defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_FD)
         int fd = 0;
-        VkMemoryGetFdInfoKHR memoryFdInfo = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, NULL,
+     VkMemoryGetFdInfoKHR memoryFdInfo = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, NULL,
                                             self->framebuffers[eye].memory,
                                             VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
-        vk->vkGetMemoryFdKHR(vk->device, &memoryFdInfo, &fd);
 
+    VkResult ret = vk->vkGetMemoryFdKHR(vk->device, &memoryFdInfo, &fd);
+        if(ret != VK_SUCCESS)
+        VK_ERROR(vk, " vkGetMemoryFdKHR: %s", vk_result_string(ret));
         illixr_publish_vk_image_handle(fd, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
 
-    #elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
-        VkMemoryGetAndroidHardwareBufferInfoANDROID memoryFdInfo = {
-                .sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
-                .pNext = NULL,
-                .memory = self->framebuffers[eye].memory,
-        };
+#elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
 
-        AHardwareBuffer *buf = NULL;
-        VkResult ret = vk->vkGetMemoryAndroidHardwareBufferANDROID(vk->device, &memoryFdInfo, &buf);
-        illixr_publish_vk_buffer_handle(buf, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
-    #endif
+    AHardwareBuffer_Desc desc;
+    U_ZERO(&desc);
+    desc.height = self->extent.height;
+    desc.width = self->extent.width;
+    desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;;
+    desc.layers = 1;
+    desc.usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER| AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+
+    AHardwareBuffer *a_buffer = NULL;
+
+    int retu = AHardwareBuffer_allocate(&desc, &a_buffer);
+    if (retu != 0) {
+        return XRT_ERROR_ALLOCATION;
+    }
+    // Out->pNext
+    VkAndroidHardwareBufferFormatPropertiesANDROID a_buffer_format_props = {
+            .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID,
+    };
+
+    // Out
+    VkAndroidHardwareBufferPropertiesANDROID a_buffer_props = {
+            .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID,
+            .pNext = &a_buffer_format_props,
+    };
+
+    VkResult ret = vk->vkGetAndroidHardwareBufferPropertiesANDROID(vk->device, a_buffer, &a_buffer_props);
+    if (ret != VK_SUCCESS) {
+        U_LOG_E("vkGetAndroidHardwareBufferPropertiesANDROID: %s", vk_result_string(ret));
+        return ret;
+    }
+    void *next_chain = NULL;
+    VkExternalFormatANDROID format_android = {
+            .sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+    };
+    (format_android).pNext = next_chain;                                                                           \
+    next_chain = (void *)&(format_android);
+
+    VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
+    external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    external_memory_image_create_info.pNext = next_chain;
+
+    VkImageCreateInfo create_info = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .pNext = &external_memory_image_create_info,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = format,
+            .extent = {.width = self->extent.width, .height = self->extent.height, .depth = 1},
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    ret = vk->vkCreateImage(vk->device, &create_info, NULL, &self->framebuffers[eye].image);
+    if (ret != VK_SUCCESS) {
+        U_LOG_E("vkCreateImage: %s", vk_result_string(ret));
+        return ret;
+    }
+
+    VkMemoryRequirements memReqs = {};
+    vk->vkGetImageMemoryRequirements(vk->device, self->framebuffers[eye].image, &memReqs);
+
+    VkImportAndroidHardwareBufferInfoANDROID androidHardwareBufferInfo = {
+            VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
+            NULL,
+            a_buffer
+    };
+    VkExportMemoryAllocateInfo exportAllocInfo = {
+            VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, &androidHardwareBufferInfo,
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
+    VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo};
+
+    VkDeviceSize allocationSize = {0};
+    memAllocInfo.allocationSize = allocationSize = a_buffer_props.allocationSize;//memReqs.size;
+
+    uint32_t memoryTypeIndex = UINT32_MAX;
+    bool bret = vk_get_memory_type(          //
+             vk,                                  // vk_bundle
+            memReqs.memoryTypeBits,  // type_bits
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // memory_props
+            &memoryTypeIndex);                 // out_type_id
+    if (!bret) {
+        return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+    }
+
+    memAllocInfo.memoryTypeIndex = memoryTypeIndex;
+    ret = vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->framebuffers[eye].memory);
+    if (ret != VK_SUCCESS) {
+        VK_ERROR(vk, " vkAllocateMemory: %s", vk_result_string(ret));
+        return ret;
+    }
+    ret = vk->vkBindImageMemory(vk->device, self->framebuffers[eye].image, self->framebuffers[eye].memory, 0);
+    if (ret != VK_SUCCESS) {
+        // Clean up memory
+        vk->vkFreeMemory(vk->device, self->framebuffers[eye].memory, NULL);
+        VK_ERROR(vk, "vkBindImageMemory: %s", vk_result_string(ret));
+    }
+    VkMemoryGetAndroidHardwareBufferInfoANDROID memoryFdInfo = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
+            .pNext = NULL,
+            .memory = self->framebuffers[eye].memory,
+    };
+
+    AHardwareBuffer *buf = NULL;
+    ret = vk->vkGetMemoryAndroidHardwareBufferANDROID(vk->device, &memoryFdInfo, &buf);
+    if(ret != VK_SUCCESS)
+        VK_ERROR(vk, " vkGetMemoryAndroidHardwareBufferANDROID: %s", vk_result_string(ret));
+//    if(buf != NULL)
+//    VK_ERROR(vk, " SUCCESS vkGetMemoryAndroidHardwareBufferANDROID: ");
+//    else {
+//        VK_ERROR(vk, " SUCCESS vkGetMemoryAndroidHardwareBufferANDROID: still null..");            [0] 0x79509a11a0, type: 1, name: NULL
+
+//    }
+    illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
+#endif
+
     return true;
 }
 
@@ -569,9 +893,12 @@ _init(struct comp_layer_renderer *self,
                            &self->render_pass))
         return false;
 
-    for (uint32_t i = 0; i < 2; i++)
+    for (uint32_t i = 0; i < 2; i++) {
         if (!_init_frame_buffer(self, format, self->render_pass, i))
             return false;
+        if (!_init_illixr_image(self, format, self->render_pass, i))
+            return false;
+    }
 
     if (!_init_descriptor_layout(self))
         return false;

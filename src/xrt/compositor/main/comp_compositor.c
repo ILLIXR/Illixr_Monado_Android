@@ -226,9 +226,9 @@ do_graphics_layers(struct comp_compositor *c)
 
     comp_renderer_destroy_layers(c->r);
 
-    if (c->base.slot.one_projection_layer_fast_path) {
-        return;
-    }
+//    if (c->base.slot.one_projection_layer_fast_path) {
+//        return;
+//    }
 
     comp_renderer_allocate_layers(c->r, layer_count);
 

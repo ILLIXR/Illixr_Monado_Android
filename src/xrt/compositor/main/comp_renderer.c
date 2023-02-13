@@ -892,22 +892,41 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
     bool one_projection_layer_fast_path = c->base.slot.one_projection_layer_fast_path;
 
     // No fast path, standard layer renderer path.
-    if (!one_projection_layer_fast_path) {
+   // if (!one_projection_layer_fast_path) {
         // We mark here to include the layer rendering in the GPU time.
         comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
 
         renderer_get_view_projection(r);
         comp_layer_renderer_draw(r->lr);
 
-        VkSampler src_samplers[2] = {
-                r->lr->framebuffers[0].sampler,
-                r->lr->framebuffers[1].sampler,
+       //  Insert ILLIXR:
+    COMP_SPEW(c, "WRITE TO FRAME STARTED");
+    illixr_write_frame(0, 0);
+    COMP_SPEW(c, "WRITE TO FRAME FINISHED");
+    wait_for_illixr_signal();
 
-        };
-        VkImageView src_image_views[2] = {
-                r->lr->framebuffers[0].view,
-                r->lr->framebuffers[1].view,
-        };
+    assert(r->lr->illixr_images[0].sampler);
+    assert(r->lr->illixr_images[1].sampler);
+    VkSampler src_samplers[2] = {
+            r->lr->illixr_images[0].sampler,
+            r->lr->illixr_images[1].sampler,
+    };
+
+    VkImageView src_image_views[2] = {
+            r->lr->illixr_images[0].view,
+            r->lr->illixr_images[1].view,
+    };
+
+
+//        VkSampler src_samplers[2] = {
+//                r->lr->framebuffers[0].sampler,
+//                r->lr->framebuffers[1].sampler,
+//
+//        };
+//        VkImageView src_image_views[2] = {
+//                r->lr->framebuffers[0].view,
+//                r->lr->framebuffers[1].view,
+//        };
 
         struct xrt_normalized_rect src_norm_rects[2] = {
                 {.x = 0, .y = 0, .w = 1, .h = 1},
@@ -919,13 +938,13 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
         renderer_submit_queue(r, rr->r->cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
         return;
-    }
+  //  }
 
 
     /*
      * Fast path.
      */
-
+/*
     XRT_MAYBE_UNUSED const uint32_t layer_count = c->base.slot.layer_count;
     assert(layer_count >= 1);
 
@@ -961,9 +980,10 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
 
         default: assert(false);
     }
-    COMP_SPEW(c, "WRITE TO FRAME STARTED");
-    illixr_write_frame(0, 0);
-    COMP_SPEW(c, "WRITE TO FRAME FINISHED");
+    */
+//    COMP_SPEW(c, "WRITE TO FRAME STARTED");
+//    illixr_write_frame(0, 0);
+//    COMP_SPEW(c, "WRITE TO FRAME FINISHED");
 }
 
 

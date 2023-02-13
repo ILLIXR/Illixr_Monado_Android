@@ -148,8 +148,11 @@ namespace ILLIXR {
         time_point predict_computed_time; // Time at which the prediction was computed
         time_point predict_target_time;   // Time that prediction targeted.
     } fast_pose_type;
-// Used to identify which graphics API is being used (for swapchain construction)
-    enum class graphics_api { OPENGL, VULKAN };
+    // Used to identify which graphics API is being used (for swapchain construction)
+    enum class graphics_api { OPENGL, VULKAN, TBD};
+
+    // Used to distinguish between different image handles
+    enum class swapchain_usage { LEFT_SWAPCHAIN, RIGHT_SWAPCHAIN, LEFT_RENDER, RIGHT_RENDER, NA };
 
     typedef struct vk_image_handle {
         int      file_descriptor;
@@ -194,30 +197,61 @@ namespace ILLIXR {
         };
 
         uint32_t num_images;
+        swapchain_usage usage;
 
         // This decides whether it's the left or right swapchain,
         // but it may be used in the future to support more composition layers as well.
-        uint32_t swapchain_index;
+        image_handle()
+                : type{graphics_api::TBD}
+                , gl_handle{0}
+                , num_images{0}
+                , usage{swapchain_usage::NA} {}
 
-        image_handle(GLuint gl_handle_, uint32_t num_images_, uint32_t swapchain_index_)
+        image_handle(GLuint gl_handle_, uint32_t num_images_, swapchain_usage usage_)
                 : type{graphics_api::OPENGL}
                 , gl_handle{gl_handle_}
                 , num_images{num_images_}
-                , swapchain_index{swapchain_index_} { }
+                , usage{usage_} { }
 
         image_handle(int vk_fd_, int64_t format, size_t alloc_size, uint32_t width_, uint32_t height_, uint32_t num_images_,
-                     uint32_t swapchain_index_)
+                     swapchain_usage usage_)
                 : type{graphics_api::VULKAN}
                 , vk_handle{vk_fd_, format, alloc_size, width_, height_}
                 , num_images{num_images_}
-                , swapchain_index{swapchain_index_} { }
+                , usage{usage_} { }
 
         image_handle(AHardwareBuffer *ahardware_buffer, int64_t format, size_t alloc_size, uint32_t width_, uint32_t height_, uint32_t num_images_,
-                     uint32_t swapchain_index_)
+                     swapchain_usage usage_)
                 : type{graphics_api::VULKAN}
                 , vk_buffer_handle{ahardware_buffer, format, alloc_size, width_, height_}
                 , num_images{num_images_}
-                , swapchain_index{swapchain_index_} { }
+                , usage{usage_} { }
+    };
+
+    // Used to identify which graphics API is being used (for swapchain construction)
+    enum class semaphore_usage { LEFT_RENDER_COMPLETE, RIGHT_RENDER_COMPLETE, NA };
+
+    struct semaphore_handle : public switchboard::event {
+        int vk_handle;
+        semaphore_usage usage;
+
+        semaphore_handle()
+                : vk_handle{0}
+                , usage{semaphore_usage::NA} {}
+
+        semaphore_handle(int vk_handle_, semaphore_usage usage_)
+                : vk_handle{vk_handle_}
+                , usage{usage_} {}
+    };
+
+    struct illixr_signal : public switchboard::event {
+       int illixr_ready;
+       illixr_signal()
+                : illixr_ready(false) {}
+
+       illixr_signal(int illixr_ready_)
+                : illixr_ready(illixr_ready_) {}
+
     };
 // Using arrays as a swapchain
 // Array of left eyes, array of right eyes
@@ -232,7 +266,8 @@ namespace ILLIXR {
 
         rendered_frame() { }
 
-        rendered_frame(std::array<GLuint, 2>&& swapchain_indices_, std::array<GLuint, 2>&& swap_indices_, fast_pose_type render_pose_,                   time_point sample_time_, time_point render_time_)
+        rendered_frame(std::array<GLuint, 2>&& swapchain_indices_, std::array<GLuint, 2>&& swap_indices_,
+                       fast_pose_type render_pose_, time_point sample_time_, time_point render_time_)
                 : swapchain_indices{std::move(swapchain_indices_)}
                 , swap_indices{std::move(swap_indices_)}
                 , render_pose(render_pose_)
