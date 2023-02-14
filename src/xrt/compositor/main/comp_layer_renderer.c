@@ -564,6 +564,7 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 //            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
+    format = VK_FORMAT_R8G8B8A8_UNORM;
 
     ret = vk->vkCreateImage(vk->device, &create_info, NULL, &self->illixr_images[eye].image);
     if (ret != VK_SUCCESS) {
@@ -734,7 +735,7 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     U_ZERO(&desc);
     desc.height = self->extent.height;
     desc.width = self->extent.width;
-    desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
+    desc.format =  AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
     desc.layers = 1;
     desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
             //AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER| AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
@@ -786,6 +787,8 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
+
+    format = VK_FORMAT_R8G8B8A8_UNORM;
 
     ret = vk->vkCreateImage(vk->device, &create_info, NULL, &self->framebuffers[eye].image);
     if (ret != VK_SUCCESS) {
@@ -871,6 +874,34 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 //    }
     illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
 #endif
+
+    vk_create_sampler(vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, &self->framebuffers[eye].sampler);
+
+    VkImageSubresourceRange subresource_range = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+    };
+
+    VkResult res = vk_create_view(vk, self->framebuffers[eye].image, VK_IMAGE_VIEW_TYPE_2D, format, subresource_range,
+                                  &self->framebuffers[eye].view);
+
+    vk_check_error("vk_create_view", res, false);
+
+    VkFramebufferCreateInfo framebuffer_info = {
+            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .renderPass = rp,
+            .attachmentCount = 1,
+            .pAttachments = (VkImageView[]){self->framebuffers[eye].view},
+            .width = self->extent.width,
+            .height = self->extent.height,
+            .layers = 1,
+    };
+
+    res = vk->vkCreateFramebuffer(vk->device, &framebuffer_info, NULL, &self->framebuffers[eye].handle);
+    vk_check_error("vkCreateFramebuffer", res, false);
 
     return true;
 }

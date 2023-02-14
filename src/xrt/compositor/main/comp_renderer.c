@@ -460,7 +460,10 @@ renderer_create_layer_renderer(struct comp_renderer *r)
             .height = r->c->view_extents.height,
     };
 
-    r->lr = comp_layer_renderer_create(vk, &r->c->shaders, extent, VK_FORMAT_B8G8R8A8_SRGB);
+    //r->lr = comp_layer_renderer_create(vk, &r->c->shaders, extent, VK_FORMAT_B8G8R8A8_SRGB);
+
+    r->lr = comp_layer_renderer_create(vk, &r->c->shaders, extent, VK_FORMAT_R8G8B8A8_UNORM);
+
     if (layer_count != 0) {
         comp_layer_renderer_allocate_layers(r->lr, layer_count);
     }
@@ -901,9 +904,10 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
 
        //  Insert ILLIXR:
     COMP_SPEW(c, "WRITE TO FRAME STARTED");
+    done_signal_illixr();
     illixr_write_frame(0, 0);
-    COMP_SPEW(c, "WRITE TO FRAME FINISHED");
     wait_for_illixr_signal();
+    COMP_SPEW(c, "WRITE TO FRAME FINISHED");
 
     assert(r->lr->illixr_images[0].sampler);
     assert(r->lr->illixr_images[1].sampler);

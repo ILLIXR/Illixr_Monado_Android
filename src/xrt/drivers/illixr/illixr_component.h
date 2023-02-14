@@ -15,6 +15,7 @@ void illixr_publish_vk_image_handle(int fd, int64_t format, size_t size, uint32_
 void illixr_publish_vk_buffer_handle(AHardwareBuffer *ahardware_buffer, int64_t format, size_t size, uint32_t width, uint32_t height, uint32_t num_images, uint32_t swapchain_index);
 void illixr_publish_vk_semaphore_handle(int fd, int usage);
 void wait_for_illixr_signal();
+void done_signal_illixr();
 void illixr_write_frame(unsigned int left,
                         unsigned int right);
 int64_t illixr_get_vsync_ns();

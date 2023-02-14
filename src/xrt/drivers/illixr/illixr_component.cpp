@@ -16,6 +16,7 @@ extern "C" {
 #include "common/pose_prediction.hpp"
 #include "common/relative_clock.hpp"
 #include "../../include/xrt/xrt_handles.h"
+#include "common/common_lock.hpp"
 
 #define ILLIXR_MONADO 1
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "comp-layer", __VA_ARGS__))
@@ -31,6 +32,7 @@ public:
             : plugin{name_, pb_}
             , sb{pb->lookup_impl<switchboard>()}
             , sb_pose{pb->lookup_impl<pose_prediction>()}
+            , cl{pb->lookup_impl<common_lock>()}
             , _m_clock{pb->lookup_impl<RelativeClock>()}
             , sb_image_handle{sb->get_writer<image_handle>("image_handle")}
             , sb_illixr_signal{sb->get_reader<illixr_signal>("illixr_signal")}
@@ -41,6 +43,7 @@ public:
 
     const std::shared_ptr<switchboard> sb;
     const std::shared_ptr<pose_prediction> sb_pose;
+    const std::shared_ptr<common_lock> cl;
     std::shared_ptr<RelativeClock> _m_clock;
     switchboard::writer<image_handle> sb_image_handle;
     switchboard::reader<illixr_signal> sb_illixr_signal;
@@ -61,15 +64,25 @@ extern "C" plugin* illixr_monado_create_plugin(phonebook* pb) {
     return illixr_plugin_obj;
 }
 
+//extern "C" void wait_for_illixr_signal() {
+//    int spin = 0;
+//    while(illixr_plugin_obj->sb_illixr_signal.get_ro_nullable() == NULL || illixr_plugin_obj->sb_illixr_signal.get_ro()->illixr_ready <= prev_counter) {
+//        spin++;
+//    }
+//
+//    switchboard::ptr<const illixr_signal> signal = illixr_plugin_obj->sb_illixr_signal.get_ro();
+//    prev_counter = signal->illixr_ready;
+//    LOGI("done illixr .. %d , spins = %d", prev_counter, spin);
+//}
+
 extern "C" void wait_for_illixr_signal() {
     int spin = 0;
-    while(illixr_plugin_obj->sb_illixr_signal.get_ro_nullable() == NULL || illixr_plugin_obj->sb_illixr_signal.get_ro()->illixr_ready <= prev_counter) {
-        spin++;
-    }
+    illixr_plugin_obj->cl->get_lock();
+}
 
-    switchboard::ptr<const illixr_signal> signal = illixr_plugin_obj->sb_illixr_signal.get_ro();
-    prev_counter = signal->illixr_ready;
-    LOGI("done illixr .. %d , spins = %d", prev_counter, spin);
+extern "C" void done_signal_illixr() {
+    int spin = 0;
+    illixr_plugin_obj->cl->release_lock();
 }
 
 extern "C" struct xrt_pose illixr_read_pose() {
