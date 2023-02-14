@@ -184,7 +184,6 @@ extern "C" void illixr_publish_vk_buffer_handle(AHardwareBuffer *ahardware_buffe
     if(ahardware_buffer == NULL)
         LOGI("HARDWARE BUFFER NULL IN MONADO .. %s", "hjj");
     LOGI("NOT NULL..%d",usage);
-    LOGI("fd handle %d", XRT_GRAPHICS_SYNC_HANDLE_IS_FD);
     #if defined(XRT_GRAPHICS_SYNC_HANDLE_IS_FD)
     LOGI("XRT ..%d", 1);
     #endif

@@ -437,7 +437,7 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 
 
 #if defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_FD)
-       /*
+
     VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
        external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 
@@ -469,27 +469,27 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 
 
     uint32_t memoryTypeIndex = UINT32_MAX;
-//       bool bret = vk_get_memory_type(          //
-//                   vk,                                  // vk_bundle
-//                   memReqs.memoryTypeBits,  // type_bits
-//                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // memory_props
-//                   &memoryTypeIndex);                 // out_type_id
-//       if (!bret) {
-//               return VK_ERROR_OUT_OF_DEVICE_MEMORY;
-//       }
+       bool bret = vk_get_memory_type(          //
+                   vk,                                  // vk_bundle
+                   memReqs.memoryTypeBits,  // type_bits
+                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // memory_props
+                   &memoryTypeIndex);                 // out_type_id
+       if (!bret) {
+               return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+       }
 
-    for (uint32_t i = 0; i < vk->device_memory_props.memoryTypeCount; i++)
-    {
-        if ((memReqs.memoryTypeBits & (1 << i)) &&
-            (vk->device_memory_props.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) ==
-            (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
-        {
-            memAllocInfo.memoryTypeIndex  = i;
-            break;
-        }
-    }
+//    for (uint32_t i = 0; i < vk->device_memory_props.memoryTypeCount; i++)
+//    {
+//        if ((memReqs.memoryTypeBits & (1 << i)) &&
+//            (vk->device_memory_props.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) ==
+//            (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+//        {
+//            memAllocInfo.memoryTypeIndex  = i;
+//            break;
+//        }
+//    }
 
-       //memAllocInfo.memoryTypeIndex = memoryTypeIndex;
+     memAllocInfo.memoryTypeIndex = memoryTypeIndex;
      ret = vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->illixr_images[eye].memory);
     VK_ERROR(vk, " vkAllocateMemory ..%s", vk_result_string(ret));
 
@@ -506,7 +506,7 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
         VK_ERROR(vk, " vkGetMemoryFdKHR: ..%s", vk_result_string(ret));
        // Note that we add 2 to the index here (because the first 2 values are for the swapchain)
     illixr_publish_vk_image_handle(fd, format, allocationSize, self->extent.width, self->extent.height, 1, eye+2);
-*/
+
     #elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
     AHardwareBuffer_Desc desc;
     U_ZERO(&desc);
@@ -514,8 +514,8 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     desc.width = self->extent.width;
     desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;;
     desc.layers = 1;
-    desc.usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER
-                 | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+    desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+                 //| AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
 
     AHardwareBuffer *a_buffer = NULL;
 
@@ -547,14 +547,14 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     next_chain = (void *)&(format_android);
 
     VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
-    external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     external_memory_image_create_info.pNext = next_chain;
 
     VkImageCreateInfo create_info = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .pNext = &external_memory_image_create_info,
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = format,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
             .extent = {.width = self->extent.width, .height = self->extent.height, .depth = 1},
             .mipLevels = 1,
             .arrayLayers = 1,
@@ -571,8 +571,22 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
         return ret;
     }
 
-    VkMemoryRequirements memReqs = {};
-    vk->vkGetImageMemoryRequirements(vk->device, self->illixr_images[eye].image, &memReqs);
+    VkMemoryDedicatedRequirementsKHR dedicatedRequirements =
+            {
+                    VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS_KHR,
+                    NULL,                               // pNext
+            };
+    VkMemoryRequirements2 memReqs = {
+            VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+            &dedicatedRequirements,
+    };
+    const VkImageMemoryRequirementsInfo2 imageRequirementsInfo =
+            {
+                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+                    NULL,                               // pNext
+                    self->illixr_images[eye].image
+            };
+    vk->vkGetImageMemoryRequirements2(vk->device, &imageRequirementsInfo, &memReqs);
 
     VkImportAndroidHardwareBufferInfoANDROID androidHardwareBufferInfo = {
             VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
@@ -582,22 +596,21 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 
     VkExportMemoryAllocateInfo exportAllocInfo = {
             VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, &androidHardwareBufferInfo,
-            VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
-    VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo};
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID};
+    VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo, memReqs.memoryRequirements.size};
 
     VkDeviceSize allocationSize = {0};
-    memAllocInfo.allocationSize = allocationSize = a_buffer_props.allocationSize;//memReqs.size;
+    allocationSize = memReqs.memoryRequirements.size;
 
     uint32_t memoryTypeIndex = UINT32_MAX;
     bool bret = vk_get_memory_type(          //
             vk,                                  // vk_bundle
-            memReqs.memoryTypeBits,  // type_bits
+            memReqs.memoryRequirements.memoryTypeBits,  // type_bits
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             &memoryTypeIndex);                 // out_type_id
     if (!bret) {
         return VK_ERROR_OUT_OF_DEVICE_MEMORY;
     }
-    VK_ERROR(vk, " mmorytypeindex: and memorytypebits %d %d", memoryTypeIndex, memReqs.memoryTypeBits);
 
     memAllocInfo.memoryTypeIndex = memoryTypeIndex;
     ret = vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->illixr_images[eye].memory);
@@ -701,27 +714,30 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 
     memAllocInfo.memoryTypeIndex = memoryTypeIndex;
     vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->framebuffers[eye].memory);
-    vk->vkBindImageMemory(vk->device, self->framebuffers[eye].image, self->framebuffers[eye].memory, 0);
-
+    VkResult ret = vk->vkBindImageMemory(vk->device, self->framebuffers[eye].image, self->framebuffers[eye].memory, 0);
+    if(ret != VK_SUCCESS)
+        VK_ERROR(vk, " vkBindImageMemory: %s", vk_result_string(ret));
         int fd = 0;
      VkMemoryGetFdInfoKHR memoryFdInfo = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, NULL,
                                             self->framebuffers[eye].memory,
                                             VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
 
-    VkResult ret = vk->vkGetMemoryFdKHR(vk->device, &memoryFdInfo, &fd);
+        ret = vk->vkGetMemoryFdKHR(vk->device, &memoryFdInfo, &fd);
         if(ret != VK_SUCCESS)
         VK_ERROR(vk, " vkGetMemoryFdKHR: %s", vk_result_string(ret));
         illixr_publish_vk_image_handle(fd, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
 
 #elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
 
+    VK_ERROR(vk, " format: %d", format);
     AHardwareBuffer_Desc desc;
     U_ZERO(&desc);
     desc.height = self->extent.height;
     desc.width = self->extent.width;
-    desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;;
+    desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
     desc.layers = 1;
-    desc.usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER| AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+    desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+            //AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER| AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
 
     AHardwareBuffer *a_buffer = NULL;
 
@@ -753,14 +769,14 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     next_chain = (void *)&(format_android);
 
     VkExternalMemoryImageCreateInfo external_memory_image_create_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO};
-    external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    external_memory_image_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     external_memory_image_create_info.pNext = next_chain;
 
     VkImageCreateInfo create_info = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .pNext = &external_memory_image_create_info,
             .imageType = VK_IMAGE_TYPE_2D,
-            .format = format,
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
             .extent = {.width = self->extent.width, .height = self->extent.height, .depth = 1},
             .mipLevels = 1,
             .arrayLayers = 1,
@@ -777,8 +793,22 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
         return ret;
     }
 
-    VkMemoryRequirements memReqs = {};
-    vk->vkGetImageMemoryRequirements(vk->device, self->framebuffers[eye].image, &memReqs);
+    VkMemoryDedicatedRequirementsKHR dedicatedRequirements =
+    {
+            VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS_KHR,
+            NULL,                               // pNext
+    };
+    VkMemoryRequirements2 memReqs = {
+            VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+            &dedicatedRequirements,
+    };
+    const VkImageMemoryRequirementsInfo2 imageRequirementsInfo =
+            {
+                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+                    NULL,                               // pNext
+                    self->framebuffers[eye].image
+            };
+    vk->vkGetImageMemoryRequirements2(vk->device, &imageRequirementsInfo, &memReqs);
 
     VkImportAndroidHardwareBufferInfoANDROID androidHardwareBufferInfo = {
             VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
@@ -787,23 +817,31 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
     };
     VkExportMemoryAllocateInfo exportAllocInfo = {
             VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO, &androidHardwareBufferInfo,
-            VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT};
-    VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo};
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID};
+//    VkMemoryDedicatedAllocateInfoKHR dedicatedInfo =
+//            {
+//                    VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR,   // sType
+//                    NULL,                                                   // pNext
+//                    self->framebuffers[eye].image,                                                  // image
+//                    VK_NULL_HANDLE,                                         // buffer
+//            };
+
+    VkMemoryAllocateInfo memAllocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &exportAllocInfo, memReqs.memoryRequirements.size};
 
     VkDeviceSize allocationSize = {0};
-    memAllocInfo.allocationSize = allocationSize = a_buffer_props.allocationSize;//memReqs.size;
+    allocationSize = memReqs.memoryRequirements.size;
 
     uint32_t memoryTypeIndex = UINT32_MAX;
     bool bret = vk_get_memory_type(          //
              vk,                                  // vk_bundle
-            memReqs.memoryTypeBits,  // type_bits
+            memReqs.memoryRequirements.memoryTypeBits,  // type_bits
              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // memory_props
             &memoryTypeIndex);                 // out_type_id
     if (!bret) {
         return VK_ERROR_OUT_OF_DEVICE_MEMORY;
     }
 
-    memAllocInfo.memoryTypeIndex = memoryTypeIndex;
+    memAllocInfo.memoryTypeIndex =  memoryTypeIndex;
     ret = vk->vkAllocateMemory(vk->device, &memAllocInfo, NULL, &self->framebuffers[eye].memory);
     if (ret != VK_SUCCESS) {
         VK_ERROR(vk, " vkAllocateMemory: %s", vk_result_string(ret));
