@@ -562,7 +562,7 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = usage,
 //            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
     format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -785,7 +785,7 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
 
     format = VK_FORMAT_R8G8B8A8_UNORM;

@@ -902,7 +902,7 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
         renderer_get_view_projection(r);
         comp_layer_renderer_draw(r->lr);
 
-       //  Insert ILLIXR:
+         //Insert ILLIXR:
     COMP_SPEW(c, "WRITE TO FRAME STARTED");
     done_signal_illixr();
     illixr_write_frame(0, 0);
