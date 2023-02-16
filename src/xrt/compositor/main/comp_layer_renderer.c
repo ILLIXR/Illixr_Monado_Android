@@ -636,7 +636,7 @@ _init_illixr_image(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
         ret = vk->vkGetMemoryAndroidHardwareBufferANDROID(vk->device, &memoryFdInfo, &buf);
         if(ret != VK_SUCCESS)
             VK_ERROR(vk, " vkGetMemoryAndroidHardwareBufferANDROID: %s", vk_result_string(ret));
-        illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye+2);
+        //illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye+2);
     #endif
 
 
@@ -872,7 +872,7 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 //        VK_ERROR(vk, " SUCCESS vkGetMemoryAndroidHardwareBufferANDROID: still null..");            [0] 0x79509a11a0, type: 1, name: NULL
 
 //    }
-    illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
+    //illixr_publish_vk_buffer_handle(a_buffer, format, allocationSize, self->extent.width, self->extent.height, 1, eye);
 #endif
 
     vk_create_sampler(vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, &self->framebuffers[eye].sampler);

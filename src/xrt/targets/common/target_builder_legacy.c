@@ -197,6 +197,11 @@ t_builder_legacy_create(void)
         LOG("illixr present in driver list");
     #endif
     LOG("illixr not present in driver list");
+
+    #ifdef XRT_BUILD_DRIVER_ANDROID
+        LOG("android present in driver list");
+    #endif
+        LOG("android not present in driver list");
 	struct xrt_builder *xb = U_TYPED_CALLOC(struct xrt_builder);
 	xb->estimate_system = legacy_estimate_system;
 	xb->open_system = legacy_open_system;

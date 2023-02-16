@@ -276,8 +276,8 @@ option_with_deps(XRT_HAVE_ONNXRUNTIME "Enable ONNX runtime support" DEPENDS ONNX
 option_with_deps(XRT_HAVE_REALSENSE "Enable RealSense support" DEPENDS realsense2_FOUND)
 
 # Drivers to build (sorted)
-#option_with_deps(XRT_BUILD_DRIVER_ANDROID "Enable Android sensors driver" DEPENDS ANDROID)
-option_with_deps(XRT_BUILD_DRIVER_ANDROID "Enable Android sensors driver" OFF)
+option_with_deps(XRT_BUILD_DRIVER_ANDROID "Enable Android sensors driver" ON)
+#option_with_deps(XRT_BUILD_DRIVER_ANDROID "Enable Android sensors driver" OFF)
 option_with_deps(XRT_BUILD_DRIVER_ARDUINO "Enable Arduino input device with BLE" DEPENDS XRT_HAVE_DBUS)
 option_with_deps(XRT_BUILD_DRIVER_DAYDREAM "Enable the Google Daydream View controller driver (BLE)" DEPENDS XRT_HAVE_DBUS)
 option_with_deps(XRT_BUILD_DRIVER_DEPTHAI "DepthAI" DEPENDS depthai_FOUND)
@@ -287,7 +287,7 @@ option_with_deps(XRT_BUILD_DRIVER_TWRAP "Enable Tracking Wrapper drivers" ON) # 
 option_with_deps(XRT_BUILD_DRIVER_HDK "Enable HDK driver" DEPENDS XRT_HAVE_INTERNAL_HID)
 option_with_deps(XRT_BUILD_DRIVER_HYDRA "Enable Hydra driver" DEPENDS XRT_HAVE_INTERNAL_HID)
 #option_with_deps(XRT_BUILD_DRIVER_ILLIXR "Enable ILLIXR driver" DEPENDS ILLIXR_PATH)
-option_with_deps(XRT_BUILD_DRIVER_ILLIXR "Enable ILLIXR driver" ON)
+option_with_deps(XRT_BUILD_DRIVER_ILLIXR "Enable ILLIXR driver" OFF)
 option(XRT_BUILD_DRIVER_NS "Enable North Star driver" ON)
 option_with_deps(XRT_BUILD_DRIVER_OHMD "Enable OpenHMD driver" DEPENDS OPENHMD_FOUND)
 option_with_deps(XRT_BUILD_DRIVER_OPENGLOVES "Enable OpenGloves driver" DEPENDS XRT_HAVE_LIBUDEV XRT_HAVE_BLUETOOTH)
@@ -303,7 +303,7 @@ option_with_deps(XRT_BUILD_DRIVER_VF "Build video frame driver (for video file s
 option_with_deps(XRT_BUILD_DRIVER_VIVE "Enable driver for HTC Vive, Vive Pro, Valve Index, and their controllers" DEPENDS ZLIB_FOUND XRT_HAVE_LINUX)
 option_with_deps(XRT_BUILD_DRIVER_WMR "Enable Windows Mixed Reality driver" DEPENDS "NOT WIN32")
 option_with_deps(XRT_BUILD_DRIVER_SIMULAVR "Enable simula driver" DEPENDS XRT_HAVE_REALSENSE)
-option(XRT_BUILD_DRIVER_SIMULATED "Enable simulated driver" ON)
+option(XRT_BUILD_DRIVER_SIMULATED "Enable simulated driver" OFF)
 
 option(XRT_BUILD_SAMPLES "Enable compiling sample code implementations that will not be linked into any final targets" ON)
 set(XRT_IPC_MSG_SOCK_FILENAME monado_comp_ipc CACHE STRING "Service socket filename")
@@ -342,7 +342,7 @@ list(
 	"HANDTRACKING"
 	"HDK"
 	"HYDRA"
-	"ILLIXR"
+#	"ILLIXR"
 	"NS"
 	"OHMD"
 	"OPENGLOVES"
@@ -513,7 +513,7 @@ message(STATUS "#    DRIVER_EUROC:        ${XRT_BUILD_DRIVER_EUROC}")
 message(STATUS "#    DRIVER_HANDTRACKING: ${XRT_BUILD_DRIVER_HANDTRACKING}")
 message(STATUS "#    DRIVER_HDK:          ${XRT_BUILD_DRIVER_HDK}")
 message(STATUS "#    DRIVER_HYDRA:        ${XRT_BUILD_DRIVER_HYDRA}")
-message(STATUS "#    DRIVER_ILLIXR:       ${XRT_BUILD_DRIVER_ILLIXR}")
+#message(STATUS "#    DRIVER_ILLIXR:       ${XRT_BUILD_DRIVER_ILLIXR}")
 message(STATUS "#    DRIVER_NS:           ${XRT_BUILD_DRIVER_NS}")
 message(STATUS "#    DRIVER_OHMD:         ${XRT_BUILD_DRIVER_OHMD}")
 message(STATUS "#    DRIVER_OPENGLOVES:   ${XRT_BUILD_DRIVER_OPENGLOVES}")
