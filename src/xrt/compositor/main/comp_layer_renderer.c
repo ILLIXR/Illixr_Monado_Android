@@ -730,7 +730,6 @@ _init_frame_buffer(struct comp_layer_renderer *self, VkFormat format, VkRenderPa
 
 #elif defined(XRT_GRAPHICS_BUFFER_HANDLE_IS_AHARDWAREBUFFER)
 
-    VK_ERROR(vk, " format: %d", format);
     AHardwareBuffer_Desc desc;
     U_ZERO(&desc);
     desc.height = self->extent.height;

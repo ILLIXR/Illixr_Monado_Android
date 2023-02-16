@@ -32,6 +32,15 @@
 #include "common/runtime.hpp"
 #include "../auxiliary/android/android_globals.h"
 #include <android/native_window_jni.h>
+#include "os/os_threading.h"
+#include "math/m_imu_3dof.h"
+#include <xrt/xrt_config_android.h>
+#include <android/sensor.h>
+
+#define POLL_RATE_USEC (1000L / 60) * 1000
+
+#define LOGD(...) ((void)__android_log_print(ANDROID_LOG_INFO, "illixr_device", __VA_ARGS__))
+
 #define ILLIXR_MONADO 1
 
 /*
@@ -43,11 +52,22 @@
 struct illixr_hmd
 {
 	struct xrt_device base;
-
+    struct os_thread_helper oth;
 	struct xrt_pose pose;
+    ASensorManager *sensor_manager;
+    const ASensor *accelerometer;
+    const ASensor *gyroscope;
+    ASensorEventQueue *event_queue;
 
 	bool print_spew;
 	bool print_debug;
+
+    struct
+    {
+        //! Lock for last and fusion.
+        struct os_mutex lock;
+        struct m_imu_3dof fusion;
+    };
 
 	const char *path;
 	const char *comp;
@@ -61,6 +81,106 @@ struct illixr_hmd
  * Functions
  *
  */
+
+// Callback for the Android sensor event queue
+static int
+android_sensor_callback(int fd, int events, void *data)
+{
+    struct illixr_hmd *d = (struct illixr_hmd *)data;
+
+    if (d->accelerometer == NULL || d->gyroscope == NULL)
+        return 1;
+
+    ASensorEvent event;
+    struct xrt_vec3 gyro;
+    struct xrt_vec3 accel;
+    while (ASensorEventQueue_getEvents(d->event_queue, &event, 1) > 0) {
+
+        switch (event.type) {
+            case ASENSOR_TYPE_ACCELEROMETER: {
+                accel.x = event.acceleration.y;
+                accel.y = -event.acceleration.x;
+                accel.z = event.acceleration.z;
+
+                //ANDROID_TRACE(d, "accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
+                LOGD("accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
+
+                break;
+            }
+            case ASENSOR_TYPE_GYROSCOPE: {
+                gyro.x = -event.data[1];
+                gyro.y = event.data[0];
+                gyro.z = event.data[2];
+
+                //ANDROID_TRACE(d, "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
+                LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
+
+                // TODO: Make filter handle accelerometer
+                struct xrt_vec3 null_accel;
+
+                // Lock last and the fusion.
+                os_mutex_lock(&d->lock);
+
+                m_imu_3dof_update(&d->fusion, event.timestamp, &null_accel, &gyro);
+
+                // Now done.
+                os_mutex_unlock(&d->lock);
+            }
+            default: //ANDROID_TRACE(d, "Unhandled event type %d", event.type);
+                     LOGD( "Unhandled event type %d", event.type);
+        }
+    }
+
+    return 1;
+}
+
+static inline int32_t
+android_get_sensor_poll_rate(const struct illixr_hmd *d)
+{
+    const float freq_multiplier = 1.0f / 3.0f;
+    return (d == NULL) ? POLL_RATE_USEC
+                       : (int32_t)(d->base.hmd->screens[0].nominal_frame_interval_ns * freq_multiplier * 0.001f);
+}
+
+static void *
+android_run_thread(void *ptr)
+{
+    struct illixr_hmd *d = (struct illixr_hmd *)ptr;
+    const int32_t poll_rate_usec = android_get_sensor_poll_rate(d);
+    LOGD("ANDROID RUN THREAD");
+#if __ANDROID_API__ >= 26
+    d->sensor_manager = ASensorManager_getInstanceForPackage(XRT_ANDROID_PACKAGE);
+#else
+    d->sensor_manager = ASensorManager_getInstance();
+#endif
+    d->accelerometer = ASensorManager_getDefaultSensor(d->sensor_manager, ASENSOR_TYPE_ACCELEROMETER);
+    d->gyroscope = ASensorManager_getDefaultSensor(d->sensor_manager, ASENSOR_TYPE_GYROSCOPE);
+
+    ALooper *looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+
+    d->event_queue = ASensorManager_createEventQueue(d->sensor_manager, looper, ALOOPER_POLL_CALLBACK,
+                                                     android_sensor_callback, (void *)d);
+
+    // Start sensors in case this was not done already.
+    if (d->accelerometer != NULL) {
+        LOGD("start accelerometer");
+        ASensorEventQueue_enableSensor(d->event_queue, d->accelerometer);
+        ASensorEventQueue_setEventRate(d->event_queue, d->accelerometer, poll_rate_usec);
+    }
+    if (d->gyroscope != NULL) {
+        LOGD("start gyroscope");
+        ASensorEventQueue_enableSensor(d->event_queue, d->gyroscope);
+        ASensorEventQueue_setEventRate(d->event_queue, d->gyroscope, poll_rate_usec);
+    }
+
+    int ret = 0;
+    while (d->oth.running && ret != ALOOPER_POLL_ERROR) {
+        ret = ALooper_pollAll(0, NULL, NULL, NULL);
+        LOGD("oth running %d", ret);
+    }
+
+    return NULL;
+}
 
 static inline struct illixr_hmd *
 illixr_hmd(struct xrt_device *xdev)
@@ -103,6 +223,12 @@ illixr_hmd_destroy(struct xrt_device *xdev)
 	dh->runtime->stop();
 	delete dh->runtime;
 	delete dh->runtime_lib;
+
+    // Destroy the thread object.
+    os_thread_helper_destroy(&dh->oth);
+
+    // Now that the thread is not running we can destroy the lock.
+    os_mutex_destroy(&dh->lock);
 
 	// Remove the variable tracking.
 	u_var_remove_root(dh);
@@ -235,6 +361,29 @@ illixr_hmd_create(const char *path_in, const char *comp_in)
 		// Setup the distortion mesh.
 		u_distortion_mesh_set_none(&dh->base);
 	}
+
+    m_imu_3dof_init(&dh->fusion, M_IMU_3DOF_USE_GRAVITY_DUR_20MS);
+
+    int ret = os_mutex_init(&dh->lock);
+    LOGD("LOCK RET IS %d", ret);
+
+    if (ret != 0) {
+        LOGD("Failed to init mutex!");
+        illixr_hmd_destroy(&dh->base);
+        return 0;
+    }
+    ret = os_thread_helper_init(&dh->oth);
+    LOGD("RET IS %d", ret);
+    ret = os_thread_helper_start(&dh->oth, android_run_thread, dh);
+    if (ret != 0) {
+        DH_ERROR(dh, "Failed to start thread ILLIXR");
+        illixr_hmd_destroy(&dh->base);
+        return NULL;
+    }
+
+    u_var_add_root(dh, "Android phone", true);
+    u_var_add_ro_vec3_f32(dh, &dh->fusion.last.accel, "last.accel");
+    u_var_add_ro_vec3_f32(dh, &dh->fusion.last.gyro, "last.gyro");
 
 	// start ILLIXR runtime
 	if (illixr_rt_launch(dh, dh->path, dh->comp) != 0) {
