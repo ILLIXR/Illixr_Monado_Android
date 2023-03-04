@@ -41,7 +41,7 @@ namespace ILLIXR {
                 , img1{img1_} { }
     };
 
-    struct imu_type {
+    struct imu_type : public switchboard::event {
         time_point                  timestamp;
         Eigen::Matrix<double, 3, 1> wm;
         Eigen::Matrix<double, 3, 1> am;

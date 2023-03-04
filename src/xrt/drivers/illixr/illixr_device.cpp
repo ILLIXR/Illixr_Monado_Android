@@ -36,6 +36,7 @@
 #include "math/m_imu_3dof.h"
 #include <xrt/xrt_config_android.h>
 #include <android/sensor.h>
+#include <Eigen/Core>
 
 #define POLL_RATE_USEC (1000L / 60) * 1000
 
@@ -103,7 +104,7 @@ android_sensor_callback(int fd, int events, void *data)
                 accel.z = event.acceleration.z;
 
                 //ANDROID_TRACE(d, "accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
-                LOGD("accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
+                //LOGD("accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
 
                 break;
             }
@@ -113,7 +114,7 @@ android_sensor_callback(int fd, int events, void *data)
                 gyro.z = event.data[2];
 
                 //ANDROID_TRACE(d, "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
-                LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
+                //LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
 
                 // TODO: Make filter handle accelerometer
                 struct xrt_vec3 null_accel;
@@ -122,7 +123,8 @@ android_sensor_callback(int fd, int events, void *data)
                 os_mutex_lock(&d->lock);
 
                 m_imu_3dof_update(&d->fusion, event.timestamp, &null_accel, &gyro);
-
+                //double timestamp = event.timestamp;
+                //write_imu_data(timestamp, accel, gyro);
                 // Now done.
                 os_mutex_unlock(&d->lock);
             }
@@ -130,7 +132,6 @@ android_sensor_callback(int fd, int events, void *data)
                      LOGD( "Unhandled event type %d", event.type);
         }
     }
-
     return 1;
 }
 

@@ -17,6 +17,8 @@ extern "C" {
 #include "common/relative_clock.hpp"
 #include "../../include/xrt/xrt_handles.h"
 #include "common/common_lock.hpp"
+#include <Eigen/Core>
+#include <android/sensor.h>
 
 #define ILLIXR_MONADO 1
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "comp-layer", __VA_ARGS__))
@@ -35,6 +37,7 @@ public:
             , cl{pb->lookup_impl<common_lock>()}
             , _m_clock{pb->lookup_impl<RelativeClock>()}
             , sb_image_handle{sb->get_writer<image_handle>("image_handle")}
+//            , sb_imu{sb->get_writer<imu_type>("imu")}
             , sb_illixr_signal{sb->get_reader<illixr_signal>("illixr_signal")}
             , sb_semaphore_handle{sb->get_writer<semaphore_handle>("semaphore_handle")}
             , sb_eyebuffer{sb->get_writer<rendered_frame>("eyebuffer")}
@@ -46,12 +49,15 @@ public:
     const std::shared_ptr<common_lock> cl;
     std::shared_ptr<RelativeClock> _m_clock;
     switchboard::writer<image_handle> sb_image_handle;
+//    switchboard::writer<imu_type> sb_imu;
     switchboard::reader<illixr_signal> sb_illixr_signal;
     switchboard::writer<semaphore_handle> sb_semaphore_handle;
     switchboard::writer<rendered_frame> sb_eyebuffer;
     switchboard::reader<switchboard::event_wrapper<time_point>> sb_vsync_estimate;
     fast_pose_type prev_pose; /* stores a copy of pose each time illixr_read_pose() is called */
     time_point sample_time; /* when prev_pose was stored */
+    std::optional<ullong>     _m_first_imu_time;
+    std::optional<time_point> _m_first_real_time_imu;
 };
 
 static illixr_plugin* illixr_plugin_obj = nullptr;
@@ -64,25 +70,31 @@ extern "C" plugin* illixr_monado_create_plugin(phonebook* pb) {
     return illixr_plugin_obj;
 }
 
-//extern "C" void wait_for_illixr_signal() {
-//    int spin = 0;
-//    while(illixr_plugin_obj->sb_illixr_signal.get_ro_nullable() == NULL || illixr_plugin_obj->sb_illixr_signal.get_ro()->illixr_ready <= prev_counter) {
-//        spin++;
-//    }
-//
-//    switchboard::ptr<const illixr_signal> signal = illixr_plugin_obj->sb_illixr_signal.get_ro();
-//    prev_counter = signal->illixr_ready;
-//    LOGI("done illixr .. %d , spins = %d", prev_counter, spin);
-//}
-
 extern "C" void wait_for_illixr_signal() {
-    int spin = 0;
     illixr_plugin_obj->cl->get_lock();
 }
 
 extern "C" void done_signal_illixr() {
-    int spin = 0;
     illixr_plugin_obj->cl->release_lock();
+}
+
+extern "C" void write_imu_data(double ts, xrt_vec3 accel, xrt_vec3 gyro) {
+    if(!illixr_plugin_obj)
+        return;
+    Eigen::Vector3f la = {accel.x, accel.y, accel.z};
+    Eigen::Vector3f av = {gyro.x, gyro.y, gyro.z};
+    ullong imu_time = static_cast<ullong>(ts * 1000000);
+    if (!illixr_plugin_obj->_m_first_imu_time) {
+        illixr_plugin_obj->_m_first_imu_time      = imu_time;
+        illixr_plugin_obj->_m_first_real_time_imu = illixr_plugin_obj->_m_clock->now();
+    }
+    time_point imu_time_point{*illixr_plugin_obj->_m_first_real_time_imu + std::chrono::nanoseconds(imu_time - *illixr_plugin_obj->_m_first_imu_time)};
+//    illixr_plugin_obj->sb_imu.put(illixr_plugin_obj->sb_imu.allocate<imu_type>
+//    ({imu_time_point
+//      , av.cast<double>()
+//      , la.cast<double>()})
+//    );
+    return;
 }
 
 extern "C" struct xrt_pose illixr_read_pose() {
