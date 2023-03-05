@@ -129,7 +129,7 @@ android_sensor_callback(int fd, int events, void *data)
                 os_mutex_unlock(&d->lock);
             }
             default: //ANDROID_TRACE(d, "Unhandled event type %d", event.type);
-                     LOGD( "Unhandled event type %d", event.type);
+                     ;//LOGD( "Unhandled event type %d", event.type);
         }
     }
     return 1;
@@ -177,7 +177,7 @@ android_run_thread(void *ptr)
     int ret = 0;
     while (d->oth.running && ret != ALOOPER_POLL_ERROR) {
         ret = ALooper_pollAll(0, NULL, NULL, NULL);
-        LOGD("oth running %d", ret);
+        //LOGD("oth running %d", ret);
     }
 
     return NULL;
