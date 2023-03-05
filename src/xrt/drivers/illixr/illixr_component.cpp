@@ -19,6 +19,8 @@ extern "C" {
 #include "common/common_lock.hpp"
 #include <Eigen/Core>
 #include <android/sensor.h>
+#include <opencv2/core/mat.hpp>
+#include <mutex>
 
 #define ILLIXR_MONADO 1
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "comp-layer", __VA_ARGS__))
@@ -37,7 +39,8 @@ public:
             , cl{pb->lookup_impl<common_lock>()}
             , _m_clock{pb->lookup_impl<RelativeClock>()}
             , sb_image_handle{sb->get_writer<image_handle>("image_handle")}
-//            , sb_imu{sb->get_writer<imu_type>("imu")}
+            , sb_imu{sb->get_writer<imu_type>("imu")}
+            , sb_cam{sb->get_writer<cam_type>("cam")}
             , sb_illixr_signal{sb->get_reader<illixr_signal>("illixr_signal")}
             , sb_semaphore_handle{sb->get_writer<semaphore_handle>("semaphore_handle")}
             , sb_eyebuffer{sb->get_writer<rendered_frame>("eyebuffer")}
@@ -49,7 +52,8 @@ public:
     const std::shared_ptr<common_lock> cl;
     std::shared_ptr<RelativeClock> _m_clock;
     switchboard::writer<image_handle> sb_image_handle;
-//    switchboard::writer<imu_type> sb_imu;
+    switchboard::writer<imu_type> sb_imu;
+    switchboard::writer<cam_type> sb_cam;
     switchboard::reader<illixr_signal> sb_illixr_signal;
     switchboard::writer<semaphore_handle> sb_semaphore_handle;
     switchboard::writer<rendered_frame> sb_eyebuffer;
@@ -58,6 +62,7 @@ public:
     time_point sample_time; /* when prev_pose was stored */
     std::optional<ullong>     _m_first_imu_time;
     std::optional<time_point> _m_first_real_time_imu;
+    std::mutex imu_write_lock;
 };
 
 static illixr_plugin* illixr_plugin_obj = nullptr;
@@ -81,6 +86,8 @@ extern "C" void done_signal_illixr() {
 extern "C" void write_imu_data(double ts, xrt_vec3 accel, xrt_vec3 gyro) {
     if(!illixr_plugin_obj)
         return;
+    std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
+    //illixr_plugin_obj->imu_write_lock.lock();
     Eigen::Vector3f la = {accel.x, accel.y, accel.z};
     Eigen::Vector3f av = {gyro.x, gyro.y, gyro.z};
     ullong imu_time = static_cast<ullong>(ts * 1000000);
@@ -89,11 +96,18 @@ extern "C" void write_imu_data(double ts, xrt_vec3 accel, xrt_vec3 gyro) {
         illixr_plugin_obj->_m_first_real_time_imu = illixr_plugin_obj->_m_clock->now();
     }
     time_point imu_time_point{*illixr_plugin_obj->_m_first_real_time_imu + std::chrono::nanoseconds(imu_time - *illixr_plugin_obj->_m_first_imu_time)};
-//    illixr_plugin_obj->sb_imu.put(illixr_plugin_obj->sb_imu.allocate<imu_type>
-//    ({imu_time_point
-//      , av.cast<double>()
-//      , la.cast<double>()})
-//    );
+
+//    cv::Mat ir_left = cv::Mat::zeros(cv::Size(100, 100), CV_64FC1);
+//    cv::Mat ir_right = cv::Mat::zeros(cv::Size(100, 100), CV_64FC1);
+//    illixr_plugin_obj->sb_cam.put(illixr_plugin_obj->sb_cam.allocate<cam_type>({imu_time_point, ir_left, ir_right}));
+
+    illixr_plugin_obj->sb_imu.put(illixr_plugin_obj->sb_imu.allocate<imu_type>
+    ({imu_time_point
+      , av.cast<double>()
+      , la.cast<double>()})
+    );
+    LOGI("DONE IMU WRITE");
+    //illixr_plugin_obj->imu_write_lock.unlock();
     return;
 }
 

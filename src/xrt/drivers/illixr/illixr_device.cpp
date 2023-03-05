@@ -114,7 +114,7 @@ android_sensor_callback(int fd, int events, void *data)
                 gyro.z = event.data[2];
 
                 //ANDROID_TRACE(d, "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
-                //LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
+                LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
 
                 // TODO: Make filter handle accelerometer
                 struct xrt_vec3 null_accel;
@@ -123,8 +123,10 @@ android_sensor_callback(int fd, int events, void *data)
                 os_mutex_lock(&d->lock);
 
                 m_imu_3dof_update(&d->fusion, event.timestamp, &null_accel, &gyro);
-                //double timestamp = event.timestamp;
-                //write_imu_data(timestamp, accel, gyro);
+                double timestamp = event.timestamp;
+                write_imu_data(timestamp, accel, gyro);
+                LOGD( "write_imu_data");
+
                 // Now done.
                 os_mutex_unlock(&d->lock);
             }

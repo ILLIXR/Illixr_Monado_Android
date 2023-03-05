@@ -5,6 +5,8 @@
 #include <iostream>
 #include <memory>
 #include <opencv2/core/mat.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
 #undef Success // For 'Success' conflict
 #include <Eigen/Dense>
 #include <EGL/egl.h>
@@ -39,6 +41,17 @@ namespace ILLIXR {
                 , linear_a{linear_a_}
                 , img0{img0_}
                 , img1{img1_} { }
+    };
+
+    struct cam_type : public switchboard::event {
+        time_point time;
+        cv::Mat    img0;
+        cv::Mat    img1;
+
+        cam_type(time_point _time, cv::Mat _img0, cv::Mat _img1)
+                : time{_time}
+                , img0{_img0}
+                , img1{_img1} { }
     };
 
     struct imu_type : public switchboard::event {
