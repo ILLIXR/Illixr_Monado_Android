@@ -86,7 +86,7 @@ extern "C" void done_signal_illixr() {
 extern "C" void write_imu_data(double ts, xrt_vec3 accel, xrt_vec3 gyro) {
     if(!illixr_plugin_obj)
         return;
-    std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
+   // std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
     //illixr_plugin_obj->imu_write_lock.lock();
     Eigen::Vector3f la = {accel.x, accel.y, accel.z};
     Eigen::Vector3f av = {gyro.x, gyro.y, gyro.z};
@@ -226,6 +226,8 @@ extern "C" void illixr_publish_vk_buffer_handle(AHardwareBuffer *ahardware_buffe
     #if defined(XRT_GRAPHICS_SYNC_HANDLE_IS_FD)
     LOGI("XRT ..%d", 1);
     #endif
+    //std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
+
     swapchain_usage image_usage;
     switch (usage) {
         case 0: {
@@ -285,6 +287,7 @@ extern "C" void illixr_write_frame(GLuint left,
     assert(illixr_plugin_obj != nullptr && "illixr_plugin_obj must be initialized first.");
     LOGI("ILLIXR WRITE FRAME ..");
     static unsigned int buffer_to_use = 0U;
+    std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
 
     illixr_plugin_obj->sb_eyebuffer.put(illixr_plugin_obj->sb_eyebuffer.allocate<rendered_frame>(
             rendered_frame {
