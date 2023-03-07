@@ -529,7 +529,11 @@ namespace ILLIXR {
         public:
             buffered_reader(topic& topic)
                     : _m_topic{topic}
-                    , _m_tb{_m_topic.get_buffer()} { }
+                    , _m_tb{_m_topic.get_buffer()}
+                    {
+                        ;
+
+            }
 
             size_t size() const {
                 return _m_tb.size();
@@ -540,7 +544,9 @@ namespace ILLIXR {
                 // serial_no));
                 serial_no++;
                 ptr<const event>          this_event          = _m_tb.dequeue();
-                ptr<const specific_event> this_specific_event = std::dynamic_pointer_cast<const specific_event>(this_event);
+                //ptr<const specific_event> this_specific_event = std::dynamic_pointer_cast<const specific_event>(this_event);
+                auto this_specific_event_auto = (reinterpret_cast<typename std::shared_ptr<const specific_event>::element_type*>(this_event.get()));
+                ptr<const specific_event> this_specific_event = std::shared_ptr<const specific_event>{this_event, this_specific_event_auto};
                 return this_specific_event;
             }
         };
