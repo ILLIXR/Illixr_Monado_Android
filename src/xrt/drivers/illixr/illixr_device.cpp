@@ -58,6 +58,7 @@ struct illixr_hmd
     ASensorManager *sensor_manager;
     const ASensor *accelerometer;
     const ASensor *gyroscope;
+    const ASensor *sensor_info;
     ASensorEventQueue *event_queue;
 
 	bool print_spew;
@@ -99,8 +100,8 @@ android_sensor_callback(int fd, int events, void *data)
 
         switch (event.type) {
             case ASENSOR_TYPE_ACCELEROMETER: {
-                accel.x = event.acceleration.y;
-                accel.y = -event.acceleration.x;
+                accel.x = event.acceleration.x;
+                accel.y = event.acceleration.y;
                 accel.z = event.acceleration.z;
 
                 //ANDROID_TRACE(d, "accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
@@ -109,12 +110,12 @@ android_sensor_callback(int fd, int events, void *data)
                 break;
             }
             case ASENSOR_TYPE_GYROSCOPE: {
-                gyro.x = -event.data[1];
-                gyro.y = event.data[0];
+                gyro.x = event.data[0];
+                gyro.y = event.data[1];
                 gyro.z = event.data[2];
 
                 //ANDROID_TRACE(d, "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
-                LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
+                //LOGD( "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
 
                 // TODO: Make filter handle accelerometer
                 struct xrt_vec3 null_accel;
@@ -123,13 +124,24 @@ android_sensor_callback(int fd, int events, void *data)
                 os_mutex_lock(&d->lock);
 
                 m_imu_3dof_update(&d->fusion, event.timestamp, &null_accel, &gyro);
-                double timestamp = event.timestamp;
+                unsigned long long timestamp = event.timestamp;
+                //LOGD( "imu timestamp = %d", timestamp);
+
                 write_imu_data(timestamp, accel, gyro);
-                LOGD( "write_imu_data");
+                //LOGD( "write_imu_data");
 
                 // Now done.
                 os_mutex_unlock(&d->lock);
             }
+//            case ASENSOR_TYPE_ADDITIONAL_INFO: {
+//                switch (event.additional_info.type) {
+//                    case ASENSOR_ADDITIONAL_INFO_BEGIN: {
+//                        LOGD("additional info begin .. ");
+//                    }
+//                    default:
+//                        LOGD("sensor additinoal info default %d", event.additional_info.serial);
+//                }
+//            }
             default: //ANDROID_TRACE(d, "Unhandled event type %d", event.type);
                      ;//LOGD( "Unhandled event type %d", event.type);
         }
@@ -158,6 +170,7 @@ android_run_thread(void *ptr)
 #endif
     d->accelerometer = ASensorManager_getDefaultSensor(d->sensor_manager, ASENSOR_TYPE_ACCELEROMETER);
     d->gyroscope = ASensorManager_getDefaultSensor(d->sensor_manager, ASENSOR_TYPE_GYROSCOPE);
+    d->sensor_info = ASensorManager_getDefaultSensor(d->sensor_manager,  ASENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
 
     ALooper *looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
 
@@ -174,6 +187,11 @@ android_run_thread(void *ptr)
         LOGD("start gyroscope");
         ASensorEventQueue_enableSensor(d->event_queue, d->gyroscope);
         ASensorEventQueue_setEventRate(d->event_queue, d->gyroscope, poll_rate_usec);
+    }
+    if (d->sensor_info != NULL) {
+        LOGD("start additional info");
+        ASensorEventQueue_enableSensor(d->event_queue, d->sensor_info);
+        ASensorEventQueue_setEventRate(d->event_queue, d->sensor_info, poll_rate_usec);
     }
 
     int ret = 0;
@@ -256,9 +274,13 @@ illixr_hmd_get_tracked_pose(struct xrt_device *xdev,
 		return;
 	}
 
-	//out_relation->pose = illixr_read_pose();
+	out_relation->pose.orientation = illixr_read_pose().orientation;
+    LOGD("ILLIXR orientation %f %f %f %f", out_relation->pose.orientation.w, out_relation->pose.orientation.x, out_relation->pose.orientation.y, out_relation->pose.orientation.z);
+
     struct illixr_hmd *d = illixr_hmd(xdev);
-    out_relation->pose.orientation = d->fusion.rot;
+    LOGD("MOnado orientation %f %f %f %f", d->fusion.rot.w, d->fusion.rot.x, d->fusion.rot.y, d->fusion.rot.z);
+
+//    out_relation->pose.orientation = d->fusion.rot;
 
 	out_relation->relation_flags = (enum xrt_space_relation_flags)(
 	    XRT_SPACE_RELATION_ORIENTATION_VALID_BIT | XRT_SPACE_RELATION_ORIENTATION_TRACKED_BIT |

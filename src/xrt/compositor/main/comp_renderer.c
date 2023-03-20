@@ -903,6 +903,7 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
         comp_layer_renderer_draw(r->lr);
 
          //Insert ILLIXR:
+
     COMP_SPEW(c, "WRITE TO FRAME STARTED");
     done_signal_illixr();
     illixr_write_frame(0, 0);
@@ -922,15 +923,16 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
     };
 
 
-//        VkSampler src_samplers[2] = {
-//                r->lr->framebuffers[0].sampler,
-//                r->lr->framebuffers[1].sampler,
-//
-//        };
-//        VkImageView src_image_views[2] = {
-//                r->lr->framebuffers[0].view,
-//                r->lr->framebuffers[1].view,
-//        };
+
+        VkSampler src_samplers[2] = {
+                r->lr->framebuffers[0].sampler,
+                r->lr->framebuffers[1].sampler,
+
+        };
+        VkImageView src_image_views[2] = {
+                r->lr->framebuffers[0].view,
+                r->lr->framebuffers[1].view,
+        };
 
         struct xrt_normalized_rect src_norm_rects[2] = {
                 {.x = 0, .y = 0, .w = 1, .h = 1},

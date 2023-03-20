@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <android/log.h>
 
 DEBUG_GET_ONCE_LOG_OPTION(log_level, "U_PACING_APP_LOG", U_LOGGING_WARN)
 
@@ -28,6 +29,7 @@ DEBUG_GET_ONCE_LOG_OPTION(log_level, "U_PACING_APP_LOG", U_LOGGING_WARN)
 #define UPA_LOG_W(...) U_LOG_IFL_W(debug_get_log_option_log_level(), __VA_ARGS__)
 #define UPA_LOG_E(...) U_LOG_IFL_E(debug_get_log_option_log_level(), __VA_ARGS__)
 
+#define LOGP(...) ((void)__android_log_print(ANDROID_LOG_INFO, "pacing_app", __VA_ARGS__))
 
 /*
  *
@@ -323,6 +325,7 @@ pa_predict(struct u_pacing_app *upa,
 
 	size_t index = GET_INDEX_FROM_ID(pa, frame_id);
 	struct u_pa_frame *f = &pa->frames[index];
+    LOGP("aSSERTING FRAME ID = %d", frame_id);
 	assert(f->frame_id == -1);
 	assert(f->state == U_PA_READY);
 
@@ -381,6 +384,7 @@ pa_mark_discarded(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns)
 	// Reset the frame.
 	f->state = U_PA_READY;
 	f->frame_id = -1;
+    LOGP("Mark discarded frame id = %d", frame_id);
 }
 
 static void
@@ -416,7 +420,7 @@ pa_mark_gpu_done(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns)
 	// Update all data.
 	f->when.gpu_done_ns = when_ns;
 	f->state = U_RT_GPU_DONE;
-
+    LOGP("GPU DONE FRAME ID = %d", frame_id);
 
 	/*
 	 * Process data.
@@ -474,6 +478,7 @@ pa_retired(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns)
 	// Reset the frame.
 	f->state = U_PA_READY;
 	f->frame_id = -1;
+    LOGP("RETIRED FRAME FRAME ID = %d", frame_id);
 }
 
 static void
