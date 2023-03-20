@@ -903,6 +903,7 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
         comp_layer_renderer_draw(r->lr);
 
          //Insert ILLIXR:
+
     COMP_SPEW(c, "WRITE TO FRAME STARTED");
     done_signal_illixr();
     illixr_write_frame(0, 0);
@@ -920,6 +921,7 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
             r->lr->illixr_images[0].view,
             r->lr->illixr_images[1].view,
     };
+
 
 
 //        VkSampler src_samplers[2] = {

@@ -76,21 +76,26 @@ extern "C" plugin* illixr_monado_create_plugin(phonebook* pb) {
 }
 
 extern "C" void wait_for_illixr_signal() {
+    LOGI("Wait for illixr signal");
     illixr_plugin_obj->cl->get_lock();
+    LOGI("Wait for illixr signal done");
 }
 
 extern "C" void done_signal_illixr() {
+    LOGI("Done illixr signal");
     illixr_plugin_obj->cl->release_lock();
+    LOGI("Done illixr signal done");
 }
 
-extern "C" void write_imu_data(double ts, xrt_vec3 accel, xrt_vec3 gyro) {
+extern "C" void write_imu_data(ullong ts, xrt_vec3 accel, xrt_vec3 gyro) {
     if(!illixr_plugin_obj)
         return;
-   // std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
+    std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
     //illixr_plugin_obj->imu_write_lock.lock();
     Eigen::Vector3f la = {accel.x, accel.y, accel.z};
     Eigen::Vector3f av = {gyro.x, gyro.y, gyro.z};
-    ullong imu_time = static_cast<ullong>(ts * 1000000);
+    ullong imu_time = static_cast<ullong>(ts);
+    //LOGI("IMU TIMESTAMP = %d and %d", ts, imu_time);
     if (!illixr_plugin_obj->_m_first_imu_time) {
         illixr_plugin_obj->_m_first_imu_time      = imu_time;
         illixr_plugin_obj->_m_first_real_time_imu = illixr_plugin_obj->_m_clock->now();
@@ -106,7 +111,7 @@ extern "C" void write_imu_data(double ts, xrt_vec3 accel, xrt_vec3 gyro) {
       , av.cast<double>()
       , la.cast<double>()})
     );
-    LOGI("DONE IMU WRITE");
+    //LOGI("DONE IMU WRITE");
     //illixr_plugin_obj->imu_write_lock.unlock();
     return;
 }
@@ -123,7 +128,7 @@ extern "C" struct xrt_pose illixr_read_pose() {
 
     // record when the pose was read for use in write_frame
     illixr_plugin_obj->sample_time = illixr_plugin_obj->_m_clock->now();
-
+    LOGI("Illixr orientation in component: %f, %f, %f, %f", pose.orientation.w(), pose.orientation.x(), pose.orientation.y(), pose.orientation.z());
     ret.orientation.x = pose.orientation.x();
     ret.orientation.y = pose.orientation.y();
     ret.orientation.z = pose.orientation.z();
@@ -287,7 +292,6 @@ extern "C" void illixr_write_frame(GLuint left,
     assert(illixr_plugin_obj != nullptr && "illixr_plugin_obj must be initialized first.");
     LOGI("ILLIXR WRITE FRAME ..");
     static unsigned int buffer_to_use = 0U;
-    std::lock_guard<std::mutex> lock(illixr_plugin_obj->imu_write_lock);
 
     illixr_plugin_obj->sb_eyebuffer.put(illixr_plugin_obj->sb_eyebuffer.allocate<rendered_frame>(
             rendered_frame {
