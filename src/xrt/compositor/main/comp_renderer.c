@@ -935,6 +935,7 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
 //                r->lr->framebuffers[1].view,
 //        };
 
+
         struct xrt_normalized_rect src_norm_rects[2] = {
                 {.x = 0, .y = 0, .w = 1, .h = 1},
                 {.x = 0, .y = 0, .w = 1, .h = 1},
