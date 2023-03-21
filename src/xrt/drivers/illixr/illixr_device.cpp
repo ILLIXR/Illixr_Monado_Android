@@ -275,6 +275,8 @@ illixr_hmd_get_tracked_pose(struct xrt_device *xdev,
 	}
 
 	out_relation->pose.orientation = illixr_read_pose().orientation;
+    //out_relation->pose = illixr_read_pose();
+
     LOGD("ILLIXR orientation %f %f %f %f", out_relation->pose.orientation.w, out_relation->pose.orientation.x, out_relation->pose.orientation.y, out_relation->pose.orientation.z);
 
     struct illixr_hmd *d = illixr_hmd(xdev);

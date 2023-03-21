@@ -905,8 +905,9 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
          //Insert ILLIXR:
 
     COMP_SPEW(c, "WRITE TO FRAME STARTED");
-    done_signal_illixr();
+
     illixr_write_frame(0, 0);
+    done_signal_illixr();
     wait_for_illixr_signal();
     COMP_SPEW(c, "WRITE TO FRAME FINISHED");
 

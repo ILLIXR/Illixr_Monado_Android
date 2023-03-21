@@ -21,6 +21,7 @@ extern "C" {
 #include <android/sensor.h>
 #include <opencv2/core/mat.hpp>
 #include <mutex>
+#include <semaphore.h>
 
 #define ILLIXR_MONADO 1
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "comp-layer", __VA_ARGS__))
@@ -77,13 +78,15 @@ extern "C" plugin* illixr_monado_create_plugin(phonebook* pb) {
 
 extern "C" void wait_for_illixr_signal() {
     LOGI("Wait for illixr signal");
-    illixr_plugin_obj->cl->get_lock();
+    //illixr_plugin_obj->cl->get_lock();
+    sem_wait(&illixr_plugin_obj->cl->sem_illixr);
     LOGI("Wait for illixr signal done");
 }
 
 extern "C" void done_signal_illixr() {
     LOGI("Done illixr signal");
-    illixr_plugin_obj->cl->release_lock();
+    //illixr_plugin_obj->cl->release_lock();
+    sem_post(&illixr_plugin_obj->cl->sem_monado);
     LOGI("Done illixr signal done");
 }
 
