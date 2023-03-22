@@ -275,14 +275,14 @@ illixr_hmd_get_tracked_pose(struct xrt_device *xdev,
 	}
 
 	out_relation->pose.orientation = illixr_read_pose().orientation;
-    //out_relation->pose = illixr_read_pose();
+    out_relation->pose = illixr_read_pose();
 
     LOGD("ILLIXR orientation %f %f %f %f", out_relation->pose.orientation.w, out_relation->pose.orientation.x, out_relation->pose.orientation.y, out_relation->pose.orientation.z);
 
     struct illixr_hmd *d = illixr_hmd(xdev);
     LOGD("MOnado orientation %f %f %f %f", d->fusion.rot.w, d->fusion.rot.x, d->fusion.rot.y, d->fusion.rot.z);
 
-//    out_relation->pose.orientation = d->fusion.rot;
+    //out_relation->pose.orientation = d->fusion.rot;
 
 	out_relation->relation_flags = (enum xrt_space_relation_flags)(
 	    XRT_SPACE_RELATION_ORIENTATION_VALID_BIT | XRT_SPACE_RELATION_ORIENTATION_TRACKED_BIT |

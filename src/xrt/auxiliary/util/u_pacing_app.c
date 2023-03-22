@@ -325,12 +325,12 @@ pa_predict(struct u_pacing_app *upa,
 
 	size_t index = GET_INDEX_FROM_ID(pa, frame_id);
 	struct u_pa_frame *f = &pa->frames[index];
-    LOGP("aSSERTING FRAME ID = %d", frame_id);
-    while(f->frame_id != -1)
-    {
-        LOGP("aSSERTING FRAME ID = %d", frame_id);
-        ;
-    }
+    LOGP("ASSERTING FRAME ID = %d", frame_id);
+//    while(f->frame_id != -1)
+//    {
+//        LOGP("aSSERTING FRAME ID = %d", frame_id);
+//        ;
+//    }
 	assert(f->frame_id == -1);
 	assert(f->state == U_PA_READY);
 
