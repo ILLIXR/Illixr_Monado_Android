@@ -1918,6 +1918,7 @@ comp_renderer_draw(struct comp_renderer *r)
 
     struct comp_target *ct = r->c->target;
     struct comp_compositor *c = r->c;
+    struct render_gfx rr = {0};
 
 
     assert(c->frame.rendering.id == -1);
@@ -1946,14 +1947,7 @@ comp_renderer_draw(struct comp_renderer *r)
 
     comp_target_update_timings(ct);
 
-    bool use_compute = r->settings->use_compute;
-    struct render_gfx rr = {0};
-    struct render_compute crc = {0};
-    if (use_compute) {
-        dispatch_compute(r, &crc);
-    } else {
-        dispatch_graphics(r, &rr);
-    }
+    dispatch_graphics(r, &rr);
 
 #ifdef XRT_FEATURE_WINDOW_PEEK
     if (c->peek) {
@@ -1975,14 +1969,17 @@ comp_renderer_draw(struct comp_renderer *r)
 	}
 #endif
 
-    renderer_present_swapchain_image(r, c->frame.rendering.desired_present_time_ns,
-                                     c->frame.rendering.present_slop_ns);
+    // Monado presents the frame here, but we want to control when it presents.
+    renderer_present_swapchain_image(r, c->frame.rendering.desired_present_time_ns, c->frame.rendering.present_slop_ns);
 
-    // Save for timestamps below.
-    uint64_t frame_id = c->frame.rendering.id;
+    assert(r->c->frame.rendering.id >= 0);
+    uint64_t render_complete_signal_value = (uint64_t)r->c->frame.rendering.id;
 
-    // Clear the frame.
-    c->frame.rendering.id = -1;
+// Save for timestamps below.
+	uint64_t frame_id = c->frame.rendering.id;
+
+	// Clear the frame.
+	c->frame.rendering.id = -1;
 
     mirror_to_debug_gui_fixup_ui_state(r);
     if (can_mirror_to_debug_gui(r)) {
@@ -1996,8 +1993,9 @@ comp_renderer_draw(struct comp_renderer *r)
      *
      * This is done after a swap so isn't time critical.
      */
+    COMP_SPEW(c, "WAITING FOR GPU IDLE");
     renderer_wait_gpu_idle(r);
-
+    COMP_SPEW(c, "FINISHED WAITING");
 
     /*
      * Get timestamps of GPU work (if available).
@@ -2014,11 +2012,7 @@ comp_renderer_draw(struct comp_renderer *r)
      * Free resources.
      */
 
-    if (use_compute) {
-        render_compute_close(&crc);
-    } else {
-        render_gfx_close(&rr);
-    }
+    render_gfx_close(&rr);
 
 
     /*
