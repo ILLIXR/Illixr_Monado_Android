@@ -897,10 +897,10 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
     // No fast path, standard layer renderer path.
    // if (!one_projection_layer_fast_path) {
         // We mark here to include the layer rendering in the GPU time.
-        comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
+    comp_target_mark_submit(ct, c->frame.rendering.id, os_monotonic_get_ns());
 
-        renderer_get_view_projection(r);
-        comp_layer_renderer_draw(r->lr);
+    renderer_get_view_projection(r);
+    comp_layer_renderer_draw(r->lr);
 
          //Insert ILLIXR:
 
@@ -909,6 +909,7 @@ dispatch_graphics(struct comp_renderer *r, struct render_gfx *rr)
     illixr_write_frame(0, 0);
     done_signal_illixr();
     wait_for_illixr_signal();
+
     COMP_SPEW(c, "WRITE TO FRAME FINISHED");
 
     assert(r->lr->illixr_images[0].sampler);

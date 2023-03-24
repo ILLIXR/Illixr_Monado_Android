@@ -100,8 +100,8 @@ android_sensor_callback(int fd, int events, void *data)
 
         switch (event.type) {
             case ASENSOR_TYPE_ACCELEROMETER: {
-                accel.x = event.acceleration.x;
-                accel.y = event.acceleration.y;
+                accel.x = event.acceleration.y;
+                accel.y = -event.acceleration.x;
                 accel.z = event.acceleration.z;
 
                 //ANDROID_TRACE(d, "accel %ld %.2f %.2f %.2f", event.timestamp, accel.x, accel.y, accel.z);
@@ -110,8 +110,8 @@ android_sensor_callback(int fd, int events, void *data)
                 break;
             }
             case ASENSOR_TYPE_GYROSCOPE: {
-                gyro.x = event.data[0];
-                gyro.y = event.data[1];
+                gyro.x = -event.data[1];
+                gyro.y = event.data[0];
                 gyro.z = event.data[2];
 
                 //ANDROID_TRACE(d, "gyro %ld %.2f %.2f %.2f", event.timestamp, gyro.x, gyro.y, gyro.z);
@@ -275,7 +275,7 @@ illixr_hmd_get_tracked_pose(struct xrt_device *xdev,
 	}
 
 	out_relation->pose.orientation = illixr_read_pose().orientation;
-    out_relation->pose = illixr_read_pose();
+    //out_relation->pose = illixr_read_pose();
 
     LOGD("ILLIXR orientation %f %f %f %f", out_relation->pose.orientation.w, out_relation->pose.orientation.x, out_relation->pose.orientation.y, out_relation->pose.orientation.z);
 
