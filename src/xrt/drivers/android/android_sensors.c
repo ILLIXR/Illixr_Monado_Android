@@ -248,13 +248,13 @@ android_device_create()
 	d->base.hmd->screens[0].nominal_frame_interval_ns = time_s_to_ns(1.0f / metrics.refresh_rate);
 
 	// Everything done, finally start the thread.
-	os_thread_helper_init(&d->oth);
-	ret = os_thread_helper_start(&d->oth, android_run_thread, d);
-	if (ret != 0) {
-		ANDROID_ERROR(d, "Failed to start thread!");
-		android_device_destroy(&d->base);
-		return NULL;
-	}
+//	os_thread_helper_init(&d->oth);
+//	ret = os_thread_helper_start(&d->oth, android_run_thread, d);
+//	if (ret != 0) {
+//		ANDROID_ERROR(d, "Failed to start thread!");
+//		android_device_destroy(&d->base);
+//		return NULL;
+//	}
 
 	const uint32_t w_pixels = metrics.width_pixels;
 	const uint32_t h_pixels = metrics.height_pixels;

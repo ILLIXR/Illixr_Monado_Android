@@ -127,7 +127,7 @@ android_sensor_callback(int fd, int events, void *data)
                 unsigned long long timestamp = event.timestamp;
                 //LOGD( "imu timestamp = %d", timestamp);
 
-                write_imu_data(timestamp, accel, gyro);
+                //write_imu_data(timestamp, accel, gyro);
                 //LOGD( "write_imu_data");
 
                 // Now done.

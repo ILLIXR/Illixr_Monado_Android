@@ -18,7 +18,7 @@ void wait_for_illixr_signal();
 void done_signal_illixr();
 void illixr_write_frame(unsigned int left,
                         unsigned int right);
-void write_imu_data(unsigned long long ts, struct xrt_vec3 accel, struct xrt_vec3 gyro);
+//void write_imu_data(unsigned long long ts, struct xrt_vec3 accel, struct xrt_vec3 gyro);
 int64_t illixr_get_vsync_ns();
 int64_t illixr_get_now_ns();
 void get_illixr_context();

@@ -40,8 +40,8 @@ public:
             , cl{pb->lookup_impl<common_lock>()}
             , _m_clock{pb->lookup_impl<RelativeClock>()}
             , sb_image_handle{sb->get_writer<image_handle>("image_handle")}
-            , sb_imu{sb->get_writer<imu_type>("imu")}
-            , sb_cam{sb->get_writer<cam_type>("cam")}
+//            , sb_imu{sb->get_writer<imu_type>("imu")}
+//            , sb_cam{sb->get_writer<cam_type>("cam")}
             , sb_illixr_signal{sb->get_reader<illixr_signal>("illixr_signal")}
             , sb_semaphore_handle{sb->get_writer<semaphore_handle>("semaphore_handle")}
             , sb_eyebuffer{sb->get_writer<rendered_frame>("eyebuffer")}
@@ -53,8 +53,8 @@ public:
     const std::shared_ptr<common_lock> cl;
     std::shared_ptr<RelativeClock> _m_clock;
     switchboard::writer<image_handle> sb_image_handle;
-    switchboard::writer<imu_type> sb_imu;
-    switchboard::writer<cam_type> sb_cam;
+//    switchboard::writer<imu_type> sb_imu;
+//    switchboard::writer<cam_type> sb_cam;
     switchboard::reader<illixr_signal> sb_illixr_signal;
     switchboard::writer<semaphore_handle> sb_semaphore_handle;
     switchboard::writer<rendered_frame> sb_eyebuffer;
@@ -90,6 +90,7 @@ extern "C" void done_signal_illixr() {
     LOGI("Done illixr signal done");
 }
 
+/*
 extern "C" void write_imu_data(ullong ts, xrt_vec3 accel, xrt_vec3 gyro) {
     if(!illixr_plugin_obj)
         return;
@@ -118,6 +119,7 @@ extern "C" void write_imu_data(ullong ts, xrt_vec3 accel, xrt_vec3 gyro) {
     //illixr_plugin_obj->imu_write_lock.unlock();
     return;
 }
+*/
 
 extern "C" struct xrt_pose illixr_read_pose() {
     assert(illixr_plugin_obj && "illixr_plugin_obj must be initialized first.");

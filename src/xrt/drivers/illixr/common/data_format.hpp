@@ -4,9 +4,8 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+//#include <opencv2/core/mat.hpp>
 #include <opencv2/core/mat.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/core.hpp>
 #undef Success // For 'Success' conflict
 #include <Eigen/Dense>
 #include <EGL/egl.h>
@@ -43,7 +42,7 @@ namespace ILLIXR {
                 , img1{img1_} { }
     };
 
-    struct cam_type : public switchboard::event {
+    struct cam_type : switchboard::event {
         time_point time;
         cv::Mat    img0;
         cv::Mat    img1;
@@ -54,7 +53,18 @@ namespace ILLIXR {
                 , img1{_img1} { }
     };
 
-    struct imu_type : public switchboard::event {
+//    struct imu_type : switchboard::event {
+//        time_point      time;
+//        Eigen::Vector3d angular_v;
+//        Eigen::Vector3d linear_a;
+//
+//        imu_type(time_point time_, Eigen::Vector3d angular_v_, Eigen::Vector3d linear_a_)
+//                : time{time_}
+//                , angular_v{angular_v_}
+//                , linear_a{linear_a_} { }
+//    };
+
+    struct imu_type {
         time_point                  timestamp;
         Eigen::Matrix<double, 3, 1> wm;
         Eigen::Matrix<double, 3, 1> am;
@@ -64,6 +74,7 @@ namespace ILLIXR {
                 , wm{wm_}
                 , am{am_} { }
     };
+
 
     class rgb_depth_type : public switchboard::event {
         [[maybe_unused]] time_point time;
@@ -256,13 +267,12 @@ namespace ILLIXR {
                 : vk_handle{vk_handle_}
                 , usage{usage_} {}
     };
-
     struct illixr_signal : public switchboard::event {
-       int illixr_ready;
-       illixr_signal()
+        int illixr_ready;
+        illixr_signal()
                 : illixr_ready(false) {}
 
-       illixr_signal(int illixr_ready_)
+        illixr_signal(int illixr_ready_)
                 : illixr_ready(illixr_ready_) {}
 
     };
