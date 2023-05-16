@@ -6,6 +6,7 @@
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <application>
+        <profileable android:shell="true"/>
         <service
             android:name="org.freedesktop.monado.ipc.MonadoService"
             android:enabled="true"
