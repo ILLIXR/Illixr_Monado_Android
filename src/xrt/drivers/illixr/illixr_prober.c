@@ -54,7 +54,7 @@ illixr_prober_autoprobe(struct xrt_auto_prober *xap,
 	//illixr_path = "sdcard/Download/obj/arm64-v8a/libruntime.so"; //getenv("ILLIXR_PATH");
     illixr_path = "libruntime.so"; //getenv("ILLIXR_PATH");
 
-    illixr_comp = "libpose_prediction.so:libcommon_lock.so:libtimewarp_gl.so:librk4_integrator.so:libandroid_cam.so:libslam.so";//:libslam.so:librk4_integrator.so";//getenv("ILLIXR_COMP");
+    illixr_comp = "libpose_prediction.so:libcommon_lock.so:libtimewarp_gl.so:librk4_integrator.so:libandroid_imu_cam.so:libslam.so";//:libslam.so:librk4_integrator.so";//getenv("ILLIXR_COMP");
 	if (!illixr_path ) {
         LOG("illixr paths not specified");
 		return 0;
