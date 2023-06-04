@@ -199,23 +199,23 @@ namespace ILLIXR {
                     // Process event
                     // Also, record and log the time
                     _m_dequeued++;
-                    auto cb_start_cpu_time  = thread_cpu_time();
-                    auto cb_start_wall_time = std::chrono::high_resolution_clock::now();
+//                    auto cb_start_cpu_time  = thread_cpu_time();
+//                    auto cb_start_wall_time = std::chrono::high_resolution_clock::now();
                     // std::cerr << "deq " << ptr_to_str(reinterpret_cast<const void*>(this_event.get_ro())) << " " <<
                     // this_event.use_count() << " v\n";
                     _m_callback(std::move(this_event), _m_dequeued);
-                    if (_m_cb_log) {
-                        _m_cb_log.log(record{__switchboard_callback_header,
-                                             {
-                                                     {_m_plugin_id},
-                                                     {_m_topic_name},
-                                                     {_m_dequeued},
-                                                     {cb_start_cpu_time},
-                                                     {thread_cpu_time()},
-                                                     {cb_start_wall_time},
-                                                     {std::chrono::high_resolution_clock::now()},
-                                             }});
-                    }
+//                    if (_m_cb_log) {
+//                        _m_cb_log.log(record{__switchboard_callback_header,
+//                                             {
+//                                                     {_m_plugin_id},
+//                                                     {_m_topic_name},
+//                                                     {_m_dequeued},
+//                                                     {cb_start_cpu_time},
+//                                                     {thread_cpu_time()},
+//                                                     {cb_start_wall_time},
+//                                                     {std::chrono::high_resolution_clock::now()},
+//                                             }});
+//                    }
                 } else {
                     // Nothing to do.
                     _m_idle_cycles++;
@@ -237,16 +237,16 @@ namespace ILLIXR {
                 }
 
                 // Log stats
-                if (_m_record_logger) {
-                    _m_record_logger->log(record{__switchboard_topic_stop_header,
-                                                 {
-                                                         {_m_plugin_id},
-                                                         {_m_topic_name},
-                                                         {_m_dequeued},
-                                                         {unprocessed},
-                                                         {_m_idle_cycles},
-                                                 }});
-                }
+//                if (_m_record_logger) {
+//                    _m_record_logger->log(record{__switchboard_topic_stop_header,
+//                                                 {
+//                                                         {_m_plugin_id},
+//                                                         {_m_topic_name},
+//                                                         {_m_dequeued},
+//                                                         {unprocessed},
+//                                                         {_m_idle_cycles},
+//                                                 }});
+//                }
             }
 
         public:

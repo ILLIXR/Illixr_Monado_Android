@@ -274,8 +274,8 @@ illixr_hmd_get_tracked_pose(struct xrt_device *xdev,
 		return;
 	}
 
-	out_relation->pose.orientation = illixr_read_pose().orientation;
-    //out_relation->pose = illixr_read_pose();
+	//out_relation->pose.orientation = illixr_read_pose().orientation;
+    out_relation->pose = illixr_read_pose();
 
     LOGD("ILLIXR orientation %f %f %f %f", out_relation->pose.orientation.w, out_relation->pose.orientation.x, out_relation->pose.orientation.y, out_relation->pose.orientation.z);
 
@@ -402,14 +402,14 @@ illixr_hmd_create(const char *path_in, const char *comp_in)
         illixr_hmd_destroy(&dh->base);
         return 0;
     }
-    ret = os_thread_helper_init(&dh->oth);
-    LOGD("RET IS %d", ret);
-    ret = os_thread_helper_start(&dh->oth, android_run_thread, dh);
-    if (ret != 0) {
-        DH_ERROR(dh, "Failed to start thread ILLIXR");
-        illixr_hmd_destroy(&dh->base);
-        return NULL;
-    }
+//    ret = os_thread_helper_init(&dh->oth);
+//    LOGD("RET IS %d", ret);
+//    ret = os_thread_helper_start(&dh->oth, android_run_thread, dh);
+//    if (ret != 0) {
+//        DH_ERROR(dh, "Failed to start thread ILLIXR");
+//        illixr_hmd_destroy(&dh->base);
+//        return NULL;
+//    }
 
     u_var_add_root(dh, "Android phone", true);
     u_var_add_ro_vec3_f32(dh, &dh->fusion.last.accel, "last.accel");
