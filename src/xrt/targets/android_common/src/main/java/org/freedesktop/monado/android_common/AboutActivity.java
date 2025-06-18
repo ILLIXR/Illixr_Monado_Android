@@ -8,6 +8,7 @@
 
 package org.freedesktop.monado.android_common;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
@@ -52,7 +53,6 @@ public class AboutActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
-
         // Default to dark mode universally?
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
@@ -91,5 +91,7 @@ public class AboutActivity extends AppCompatActivity {
         }
 
         fragmentTransaction.commit();
+//        Intent myIntent = new Intent(this, IllixrActivity.class);
+//        this.startActivity(myIntent);
     }
 }

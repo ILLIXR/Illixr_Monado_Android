@@ -117,7 +117,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments "-DEIGEN3_INCLUDE_DIR=${project.eigenIncludeDir}", "-DANDROID_PLATFORM=26", "-DANDROID_STL=c++_shared", "-DANDROID_ARM_NEON=TRUE"
+                arguments "-DEIGEN3_INCLUDE_DIR=${project.eigenIncludeDir}", "-DANDROID_PLATFORM=26", "-DANDROID_STL=c++_shared", "-DANDROID_ARM_NEON=TRUE -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DBUILD_WITH_LIBUDEV=0 -DBUILD_WITH_LIBUSB=0 -DBUILD_WITH_LIBUVC=0 -DBUILD_WITH_NS=0 -DBUILD_WITH_PSMV=0 -DBUILD_WITH_PSVR=0 -DBUILD_WITH_OPENHMD=0 -DBUILD_WITH_VIVE=0"
 
             }
             if (project.pythonBinary != null) {
@@ -125,6 +125,7 @@ android {
                 cmake.arguments "-DPYTHON_EXECUTABLE=${project.pythonBinary}"
             }
         }
+        signingConfig signingConfigs.debug
 
         // Be sure to copy over licenses formatted as required.
         preBuild.dependsOn(copyLicenses)
@@ -136,6 +137,7 @@ android {
 
     buildTypes {
         release {
+//            debuggable true
             minifyEnabled false
             // Gradle plugin produces proguard-android-optimize.txt from @Keep annotations
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -154,18 +156,26 @@ android {
 
     flavorDimensions 'deployment'
     productFlavors {
-        inProcess {
-            dimension 'deployment'
-            applicationIdSuffix '.in_process'
-            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=OFF"
-            externalNativeBuild.cmake.targets "openxr_monado"
-
-            resValue "string", "app_name", "Monado XR"
-        }
+//        inProcess {
+//            dimension 'deployment'
+//            applicationIdSuffix '.in_process'
+//            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=OFF"
+//            externalNativeBuild.cmake.targets "openxr_monado"
+//
+//            resValue "string", "app_name", "Monado XR"
+//        }
+//        outOfProcess {
+//            dimension 'deployment'
+//            applicationIdSuffix '.out_of_process'
+//            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=ON"
+//            externalNativeBuild.cmake.targets "openxr_monado", "monado-service"
+//
+//            resValue "string", "app_name", "Monado XR (Out-of-Proc)"
+//        }
         outOfProcess {
             dimension 'deployment'
             applicationIdSuffix '.out_of_process'
-            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=ON"
+            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_WITH_LIBUDEV=0 -DBUILD_WITH_LIBUSB=0 -DBUILD_WITH_LIBUVC=0 -DBUILD_WITH_NS=0 -DBUILD_WITH_PSMV=0 -DBUILD_WITH_PSVR=0 -DBUILD_WITH_OPENHMD=0 -DBUILD_WITH_VIVE=0"
             externalNativeBuild.cmake.targets "openxr_monado", "monado-service"
 
             resValue "string", "app_name", "Monado XR (Out-of-Proc)"

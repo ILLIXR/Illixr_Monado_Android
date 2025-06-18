@@ -17,6 +17,9 @@
 #include "target_builder_interface.h"
 
 #include <assert.h>
+#include <android/log.h>
+
+#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "target_builder", __VA_ARGS__))
 
 static const char *driver_list[] = {
 #ifdef XRT_BUILD_DRIVER_HYDRA
@@ -189,6 +192,11 @@ legacy_destroy(struct xrt_builder *xb)
 struct xrt_builder *
 t_builder_legacy_create(void)
 {
+    LOG("TARGET BUILDER LEGACY");
+    #ifdef XRT_BUILD_DRIVER_ILLIXR
+        LOG("illixr present in driver list");
+    #endif
+    LOG("illixr not present in driver list");
 	struct xrt_builder *xb = U_TYPED_CALLOC(struct xrt_builder);
 	xb->estimate_system = legacy_estimate_system;
 	xb->open_system = legacy_open_system;

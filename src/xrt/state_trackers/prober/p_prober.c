@@ -19,6 +19,9 @@
 
 #include "os/os_hid.h"
 #include "p_prober.h"
+#include <android/log.h>
+
+#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "p-prober", __VA_ARGS__))
 
 #ifdef XRT_HAVE_V4L2
 #include "v4l2/v4l2_interface.h"
@@ -645,6 +648,7 @@ handle_found_device(
 			xdev->destroy(xdev);
 			return;
 		}
+        LOG("hmd found %s", xdev->str);
 		*have_hmd = true;
 	}
 	xdevs[i] = xdev;
@@ -715,7 +719,7 @@ static void
 add_from_auto_probers(struct prober *p, struct xrt_device **xdevs, size_t xdev_count, bool *have_hmd)
 {
 	for (int i = 0; i < XRT_MAX_AUTO_PROBERS && p->auto_probers[i]; i++) {
-
+        LOG("Inside auto probe .. %s", p->auto_probers[i]->name);
 		bool skip = false;
 		for (size_t disabled = 0; disabled < p->num_disabled_drivers; disabled++) {
 			if (strcmp(p->auto_probers[i]->name, p->disabled_drivers[disabled]) == 0) {
@@ -738,7 +742,7 @@ add_from_auto_probers(struct prober *p, struct xrt_device **xdevs, size_t xdev_c
 		struct xrt_device *new_xdevs[XRT_MAX_DEVICES_PER_PROBE] = {NULL};
 		int num_found =
 		    p->auto_probers[i]->lelo_dallas_autoprobe(p->auto_probers[i], NULL, no_hmds, &p->base, new_xdevs);
-
+        LOG("NOt skipped auto probe .. %s  %d", p->auto_probers[i]->name, num_found);
 		if (num_found <= 0) {
 			continue;
 		}

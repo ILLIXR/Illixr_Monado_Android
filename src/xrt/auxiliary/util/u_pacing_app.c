@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <android/log.h>
 
 DEBUG_GET_ONCE_LOG_OPTION(log_level, "U_PACING_APP_LOG", U_LOGGING_WARN)
 
@@ -28,6 +29,7 @@ DEBUG_GET_ONCE_LOG_OPTION(log_level, "U_PACING_APP_LOG", U_LOGGING_WARN)
 #define UPA_LOG_W(...) U_LOG_IFL_W(debug_get_log_option_log_level(), __VA_ARGS__)
 #define UPA_LOG_E(...) U_LOG_IFL_E(debug_get_log_option_log_level(), __VA_ARGS__)
 
+#define LOGP(...) ((void)__android_log_print(ANDROID_LOG_INFO, "pacing_app", __VA_ARGS__))
 
 /*
  *
@@ -35,7 +37,7 @@ DEBUG_GET_ONCE_LOG_OPTION(log_level, "U_PACING_APP_LOG", U_LOGGING_WARN)
  *
  */
 
-#define FRAME_COUNT (8)
+#define FRAME_COUNT (128)
 
 enum u_pa_state
 {
@@ -323,6 +325,7 @@ pa_predict(struct u_pacing_app *upa,
 
 	size_t index = GET_INDEX_FROM_ID(pa, frame_id);
 	struct u_pa_frame *f = &pa->frames[index];
+//    LOGP("PREDICT ASSERTING FRAME ID = %d ACTUAL FRAME ID = %d", frame_id, f->frame_id);
 	assert(f->frame_id == -1);
 	assert(f->state == U_PA_READY);
 
@@ -338,7 +341,6 @@ static void
 pa_mark_point(struct u_pacing_app *upa, int64_t frame_id, enum u_timing_point point, uint64_t when_ns)
 {
 	struct pacing_app *pa = pacing_app(upa);
-
 	UPA_LOG_T("%" PRIi64 " (%u)", frame_id, point);
 
 	size_t index = GET_INDEX_FROM_ID(pa, frame_id);
@@ -347,13 +349,15 @@ pa_mark_point(struct u_pacing_app *upa, int64_t frame_id, enum u_timing_point po
 
 	switch (point) {
 	case U_TIMING_POINT_WAKE_UP:
-		assert(f->state == U_RT_PREDICTED);
+        //LOGP("MARK WOKE %d", frame_id);
+        assert(f->state == U_RT_PREDICTED);
 
 		f->when.wait_woke_ns = when_ns;
 		f->state = U_RT_WAIT_LEFT;
 		break;
 	case U_TIMING_POINT_BEGIN:
-		assert(f->state == U_RT_WAIT_LEFT);
+        //LOGP("MARK BEGIN %d", frame_id);
+        assert(f->state == U_RT_WAIT_LEFT);
 
 		f->when.begin_ns = when_ns;
 		f->state = U_RT_BEGUN;
@@ -381,6 +385,7 @@ pa_mark_discarded(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns)
 	// Reset the frame.
 	f->state = U_PA_READY;
 	f->frame_id = -1;
+    //LOGP("Mark discarded frame id = %d", frame_id);
 }
 
 static void
@@ -399,6 +404,8 @@ pa_mark_delivered(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns, 
 	f->when.delivered_ns = when_ns;
 	f->display_time_ns = display_time_ns;
 	f->state = U_RT_DELIVERED;
+    //LOGP("Deivered frame = %d", frame_id);
+
 }
 
 static void
@@ -416,7 +423,7 @@ pa_mark_gpu_done(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns)
 	// Update all data.
 	f->when.gpu_done_ns = when_ns;
 	f->state = U_RT_GPU_DONE;
-
+    //LOGP("GPU DONE FRAME ID = %d", frame_id);
 
 	/*
 	 * Process data.
@@ -474,6 +481,7 @@ pa_retired(struct u_pacing_app *upa, int64_t frame_id, uint64_t when_ns)
 	// Reset the frame.
 	f->state = U_PA_READY;
 	f->frame_id = -1;
+    //LOGP("RETIRED FRAME FRAME ID = %d", frame_id);
 }
 
 static void

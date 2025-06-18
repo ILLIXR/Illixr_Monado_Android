@@ -245,6 +245,7 @@ vk_get_device_functions(struct vk_bundle *vk)
 	vk->vkQueueWaitIdle                             = GET_DEV_PROC(vk, vkQueueWaitIdle);
 
 	vk->vkCreateSemaphore                           = GET_DEV_PROC(vk, vkCreateSemaphore);
+
 #if defined(VK_KHR_timeline_semaphore)
 	vk->vkSignalSemaphore                           = GET_DEV_PROC(vk, vkSignalSemaphoreKHR);
 	vk->vkWaitSemaphores                            = GET_DEV_PROC(vk, vkWaitSemaphoresKHR);

@@ -52,5 +52,6 @@ dependencies {
 
     // for Hilt dependency injection
     implementation "com.google.dagger:hilt-android:$hiltVersion"
+    implementation project(path: ':src:xrt:ipc:android')
     kapt "com.google.dagger:hilt-compiler:$hiltVersion"
 }

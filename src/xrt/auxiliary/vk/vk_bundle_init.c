@@ -18,9 +18,10 @@
  */
 
 #include "vk/vk_helpers.h"
-
+#include <android/log.h>
 #include <stdio.h>
 
+#define LOGV(...) ((void)__android_log_print(ANDROID_LOG_INFO, "vk-ext", __VA_ARGS__))
 
 /*
  *
@@ -590,6 +591,7 @@ static bool
 check_extension(struct vk_bundle *vk, VkExtensionProperties *props, uint32_t prop_count, const char *ext)
 {
 	for (uint32_t i = 0; i < prop_count; i++) {
+//        LOGV("extension name %s", props[i].extensionName);
 		if (strcmp(props[i].extensionName, ext) == 0) {
 			return true;
 		}

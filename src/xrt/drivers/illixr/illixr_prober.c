@@ -12,7 +12,9 @@
 #include "util/u_debug.h"
 
 #include "illixr_interface.h"
+#include <android/log.h>
 
+#define LOG(...) ((void)__android_log_print(ANDROID_LOG_INFO, "illixr-prober", __VA_ARGS__))
 
 struct illixr_prober
 {
@@ -40,6 +42,7 @@ illixr_prober_autoprobe(struct xrt_auto_prober *xap,
                         struct xrt_prober *xp,
                         struct xrt_device **out_xdevs)
 {
+    LOG("illixr auto prober called %d", no_hmds);
 	struct illixr_prober *dp = illixr_prober(xap);
 	(void)dp;
 
@@ -48,12 +51,19 @@ illixr_prober_autoprobe(struct xrt_auto_prober *xap,
 	}
 
 	const char *illixr_path, *illixr_comp;
-	illixr_path = getenv("ILLIXR_PATH");
-	illixr_comp = getenv("ILLIXR_COMP");
-	if (!illixr_path || !illixr_comp) {
+	//illixr_path = "sdcard/Download/obj/arm64-v8a/libruntime.so"; //getenv("ILLIXR_PATH");
+    illixr_path = "libruntime.so"; //getenv("ILLIXR_PATH");
+
+    illixr_comp = "libpose_prediction.so:libcommon_lock.so:libtimewarp_gl.so:librk4_integrator.so:libandroid_imu_cam.so:libslam.so";//:libslam.so:librk4_integrator.so";//getenv("ILLIXR_COMP");
+	if (!illixr_path ) {
+        LOG("illixr paths not specified");
 		return 0;
 	}
-
+    if (!illixr_comp) {
+        LOG("illixr comp not specified");
+        return 0;
+    }
+    LOG("illixr paths specified");
 	out_xdevs[0] = illixr_hmd_create(illixr_path, illixr_comp);
 	return 1;
 }
@@ -61,6 +71,7 @@ illixr_prober_autoprobe(struct xrt_auto_prober *xap,
 struct xrt_auto_prober *
 illixr_create_auto_prober()
 {
+    LOG("illixr prober");
 	struct illixr_prober *dp = U_TYPED_CALLOC(struct illixr_prober);
 	dp->base.name = "ILLIXR";
 	dp->base.destroy = illixr_prober_destroy;

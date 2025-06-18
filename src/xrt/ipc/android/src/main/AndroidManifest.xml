@@ -5,7 +5,13 @@
         SPDX-License-Identifier: BSL-1.0
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.RECORD_VIDEO" />
     <application>
+        <profileable android:shell="true"/>
         <service
             android:name="org.freedesktop.monado.ipc.MonadoService"
             android:enabled="true"
@@ -17,5 +23,11 @@
                 <action android:name="${shutdownActionName}" />
             </intent-filter>
         </service>
+        <activity android:name=".IllixrImpl"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

@@ -161,6 +161,30 @@ Java_org_freedesktop_monado_ipc_MonadoImpl_nativeAppSurface(JNIEnv *env, jobject
 	U_LOG_D("Stored ANativeWindow: %p", (void *)nativeWindow);
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_org_freedesktop_monado_ipc_MonadoImpl_nativeAppSurface_illixr(JNIEnv *env, jobject thiz, jobject surface)
+{
+    jni::init(env);
+    Surface surf(surface);
+    //jni::Object monadoImpl(thiz);
+
+    ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
+    android_globals_store_window_illixr((struct _ANativeWindow *)nativeWindow);
+    U_LOG_D("Stored ANativeWindow: %p", (void *)nativeWindow);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_freedesktop_monado_android_1common_IllixrActivity_nativeAppSurface_1Illixr(JNIEnv *env, jobject thiz, jobject surface)
+{
+    jni::init(env);
+    Surface surf(surface);
+    //jni::Object monadoImpl(thiz);
+
+    ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, surface);
+    android_globals_store_window_illixr((struct _ANativeWindow *)nativeWindow);
+    U_LOG_D("Stored ANativeWindow: %p", (void *)nativeWindow);
+}
+
 extern "C" JNIEXPORT jint JNICALL
 Java_org_freedesktop_monado_ipc_MonadoImpl_nativeShutdownServer(JNIEnv *env, jobject thiz)
 {

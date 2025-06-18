@@ -186,7 +186,7 @@ xrt_shmem_is_valid(xrt_shmem_handle_t handle)
  * xrt_graphics_buffer_handle_t
  *
  */
-
+//change it back to 26
 #if defined(XRT_OS_ANDROID) && (__ANDROID_API__ >= 26)
 typedef struct AHardwareBuffer AHardwareBuffer;
 

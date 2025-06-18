@@ -4,6 +4,9 @@
 
 set(ENABLED_HEADSET_DRIVERS)
 set(ENABLED_DRIVERS)
+set(OpenCV_STATIC ON)
+set(OpenCV_DIR $ENV{OPENCV_ANDROID}/sdk/native/jni)
+include_directories(~/Downloads/opencv-4.5.5-android-sdk/OpenCV-android-sdk/sdk/native/jni/include)
 
 add_library(drv_includes INTERFACE)
 target_include_directories(drv_includes INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
