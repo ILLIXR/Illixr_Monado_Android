@@ -103,3 +103,7 @@ container-build-report.xml
 
 # Ignore Vulkan validation layer settings
 vk_layer_settings.txt
+
+*.hprof
+
+src/xrt/targets/openxr_android/src/main/jniLibs/

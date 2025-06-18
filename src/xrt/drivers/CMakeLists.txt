@@ -4,9 +4,13 @@
 
 set(ENABLED_HEADSET_DRIVERS)
 set(ENABLED_DRIVERS)
+set(OpenCV_DIR /home/friedel/ocv/sdk/native/jni)
 set(OpenCV_STATIC ON)
-set(OpenCV_DIR $ENV{OPENCV_ANDROID}/sdk/native/jni)
-include_directories(~/Downloads/opencv-4.5.5-android-sdk/OpenCV-android-sdk/sdk/native/jni/include)
+set(ANDROID_NDK_ABI_NAME arm64-v8a)
+find_package(OpenCV 4.5.5 REQUIRED CONFIG COMPONENTS opencv_java)
+
+#set(OpenCV_DIR $ENV{OPENCV_ANDROID}/sdk/native/jni)
+#include_directories(~/Downloads/opencv-4.5.5-android-sdk/OpenCV-android-sdk/sdk/native/jni/include)
 
 add_library(drv_includes INTERFACE)
 target_include_directories(drv_includes INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -342,8 +346,8 @@ if(XRT_BUILD_DRIVER_ILLIXR)
 		illixr/illixr_component.cpp
 		illixr/illixr_component.h
 		)
-	target_link_libraries(drv_illixr PUBLIC ${CMAKE_DL_LIBS} xrt-interfaces aux_util aux_os)
-	target_include_directories(drv_illixr PUBLIC ${ILLIXR_PATH})
+	target_link_libraries(drv_illixr PUBLIC ${CMAKE_DL_LIBS} xrt-interfaces aux_util aux_os aux_android ${OpenCV_LIBRARIES})
+	target_include_directories(drv_illixr PUBLIC ${ILLIXR_PATH} ${EIGEN3_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 	list(APPEND ENABLED_HEADSET_DRIVERS illixr)
 endif()
 

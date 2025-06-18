@@ -53,11 +53,12 @@ android {
 
 dependencies {
     implementation project(':src:xrt:auxiliary:android')
-    implementation "androidx.annotation:annotation:$androidxAnnotationVersion"
-    implementation "androidx.core:core-ktx:$androidxCoreVersion"
+    implementation "androidx.annotation:annotation:1.7.0"
+    implementation "androidx.core:core-ktx:1.5.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-
+    implementation "androidx.lifecycle:lifecycle-viewmodel:$androidxLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$androidxLifecycleVersion"
     // for Hilt dependency injection
-    api "com.google.dagger:hilt-android:$hiltVersion"
-    kapt "com.google.dagger:hilt-compiler:$hiltVersion"
+    api "com.google.dagger:hilt-android:2.45"
+    kapt "com.google.dagger:hilt-compiler:2.45"
 }
