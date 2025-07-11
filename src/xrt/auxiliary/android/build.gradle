@@ -41,7 +41,8 @@ dependencies {
     implementation "androidx.annotation:annotation:$androidxAnnotationVersion"
     implementation "androidx.core:core-ktx:$androidxCoreVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-
+    implementation "androidx.lifecycle:lifecycle-viewmodel:$androidxLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$androidxLifecycleVersion"
     // for Hilt dependency injection
     implementation "com.google.dagger:hilt-android:$hiltVersion"
     // Only a Java file has annotations right now, so we don't yet need kapt

@@ -111,19 +111,23 @@ android {
 
         println versionName
 
-        resValue "string", "monado_lib_version", "${versionName}"
+        resValue "string", "monado_lib_version", "1.1.1t"
 
         resValue "string", "library_openxrheaders_libraryVersion", parseOpenXRVersion("${rootDir}/src/external/openxr_includes/openxr/openxr.h")
 
         externalNativeBuild {
             cmake {
-                arguments "-DEIGEN3_INCLUDE_DIR=${project.eigenIncludeDir}", "-DANDROID_PLATFORM=26", "-DANDROID_STL=c++_shared", "-DANDROID_ARM_NEON=TRUE -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DBUILD_WITH_LIBUDEV=0 -DBUILD_WITH_LIBUSB=0 -DBUILD_WITH_LIBUVC=0 -DBUILD_WITH_NS=0 -DBUILD_WITH_PSMV=0 -DBUILD_WITH_PSVR=0 -DBUILD_WITH_OPENHMD=0 -DBUILD_WITH_VIVE=0"
+                version '3.10.2'
+                arguments "-DEIGEN3_INCLUDE_DIR=${project.eigenIncludeDir}", "-DANDROID_PLATFORM=26", "-DANDROID_STL=c++_shared", "-DANDROID_ARM_NEON=TRUE -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DBUILD_WITH_LIBUDEV=0 -DBUILD_WITH_LIBUSB=0 -DBUILD_WITH_LIBUVC=0 -DBUILD_WITH_NS=0 -DBUILD_WITH_PSMV=0 -DBUILD_WITH_PSVR=0 -DBUILD_WITH_OPENHMD=0 -DBUILD_WITH_VIVE=0 -DOpenCV_DIR=/home/friedel/ocv/sdk/native/jni -DANDROID_ABI=arm64-v8a -DCMAKE_TOOLCHAIN_FILE=/home/friedel/Android/Sdk/cmake/3.10.2.4988404/android.toolchain.cmake"
 
             }
             if (project.pythonBinary != null) {
                 println "Path to Python 3 explicitly specified: ${project.pythonBinary}"
                 cmake.arguments "-DPYTHON_EXECUTABLE=${project.pythonBinary}"
             }
+        }
+        ndk {
+            abiFilters 'arm64-v8a'
         }
         signingConfig signingConfigs.debug
 
@@ -175,7 +179,7 @@ android {
         outOfProcess {
             dimension 'deployment'
             applicationIdSuffix '.out_of_process'
-            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_WITH_LIBUDEV=0 -DBUILD_WITH_LIBUSB=0 -DBUILD_WITH_LIBUVC=0 -DBUILD_WITH_NS=0 -DBUILD_WITH_PSMV=0 -DBUILD_WITH_PSVR=0 -DBUILD_WITH_OPENHMD=0 -DBUILD_WITH_VIVE=0"
+            externalNativeBuild.cmake.arguments += "-DXRT_FEATURE_SERVICE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_WITH_LIBUDEV=0 -DBUILD_WITH_LIBUSB=0 -DBUILD_WITH_LIBUVC=0 -DBUILD_WITH_NS=0 -DBUILD_WITH_PSMV=0 -DBUILD_WITH_PSVR=0 -DBUILD_WITH_OPENHMD=0 -DBUILD_WITH_VIVE=0 -DOpenCV_DIR=/home/friedel/ocv/sdk/native/jni -DANDROID_ABI=arm64-v8a -DCMAKE_TOOLCHAIN_FILE=/home/friedel/Android/Sdk/cmake/3.10.2.4988404/android.toolchain.cmake"
             externalNativeBuild.cmake.targets "openxr_monado", "monado-service"
 
             resValue "string", "app_name", "Monado XR (Out-of-Proc)"
@@ -210,7 +214,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "androidx.constraintlayout:constraintlayout:$androidxConstraintLayoutVersion"
     implementation "com.google.android.material:material:$materialVersion"
-
+    implementation "androidx.lifecycle:lifecycle-viewmodel:$androidxLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$androidxLifecycleVersion"
     // Dependencies related only to AboutLibraries
     implementation "com.mikepenz:aboutlibraries-core:${latestAboutLibsRelease}"
     implementation "com.mikepenz:aboutlibraries:${latestAboutLibsRelease}"
